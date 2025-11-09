@@ -1,0 +1,8 @@
+{
+    "en-fr": "Helsinki-NLP/opus-mt-en-fr",
+    "fr-en": "Helsinki-NLP/opus-mt-fr-en",
+    "en-es": "Helsinki-NLP/opus-mt-en-es",
+    "es-en": "Helsinki-NLP/opus-mt-es-en",
+    "fr-es": "Helsinki-NLP/opus-mt-fr-es",
+    "es-fr": "Helsinki-NLP/opus-mt-es-fr"
+}

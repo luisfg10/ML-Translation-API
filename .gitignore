@@ -1,0 +1,8 @@
+# virtual environment
+venv/
+
+# .env file
+.env
+
+# specific file types
+*.ipynb
