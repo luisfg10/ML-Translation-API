@@ -1,4 +1,6 @@
-# virtual environment
+# specific directories
+__pycache__/
+.vscode/
 venv/
 
 # .env file
