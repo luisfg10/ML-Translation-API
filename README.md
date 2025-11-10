@@ -4,12 +4,12 @@ This project uses ML transformers models from the HuggingFace `Tranformers` libr
 
 
 ## Index
-[Overview](#overview)
-[Repository Structure](#repository-structure)
-[How to run locally](#how-to-run-locally)
-[Optional: Deploy in public URL using AWS EC2](#optional-deploy-in-public-url-using-aws-ec2)
-[Upcoming features](#upcoming-features)
-[Relevant Documentation](#relevant-documentation)
+* [Overview](#overview)
+* [Repository Structure](#repository-structure)
+* [How to run locally](#how-to-run-locally)
+* [Optional: Deploy in public URL using AWS EC2](#optional-deploy-in-public-url-using-aws-ec2)
+* [Upcoming features](#upcoming-features)
+* [Relevant Documentation](#relevant-documentation)
 
 ## Overview
 

@@ -35,14 +35,14 @@ def upload_model(
     Uploads/saves a translation model from the Transformers library to a specified location.
 
     Args:
-    translation_pair: str
-        The translation pair to upload (e.g., 'en-fr', 'en-es').
-    model_storage_mode: str
-        The mode of upload, either 's3' for AWS S3 or 'local' for local storage.
-        If 's3' is selected, bucket_name must be provided.
-    bucket_name: Optional[str]
-        The name of the S3 bucket to upload the model to.
-        Required if model_storage_mode is 's3'.
+        translation_pair: str
+            The translation pair to upload (e.g., 'en-fr', 'en-es').
+        model_storage_mode: str
+            The mode of upload, either 's3' for AWS S3 or 'local' for local storage.
+            If 's3' is selected, bucket_name must be provided.
+        bucket_name: Optional[str]
+            The name of the S3 bucket to upload the model to.
+            Required if model_storage_mode is 's3'.
     '''
     # read settings/model_mappings.py to get model mappings
     with open('settings/model_mappings.json', 'r') as f:

@@ -32,13 +32,13 @@ class TranslationModelManager:
         Initialize the ModelManager class.
 
         Args:
-        model_mappings: Dict[str, str]
-            A dictionary mapping translation pairs to HuggingFace hub
-            model names.
-            e.g., {'en-fr': 'Helsinki-NLP/opus-mt-en-fr', ...}
-        model_storage_mode: str
-            The mode of model storage, either 's3' or 'local'.
-            This parameter informs how models will be saved and loaded.
+            model_mappings: Dict[str, str]
+                A dictionary mapping translation pairs to HuggingFace hub
+                model names.
+                e.g., {'en-fr': 'Helsinki-NLP/opus-mt-en-fr', ...}
+            model_storage_mode: str
+                The mode of model storage, either 's3' or 'local'.
+                This parameter informs how models will be saved and loaded.
         '''
         # check inputs
         if (
@@ -80,16 +80,16 @@ class TranslationModelManager:
         Resolves the Hugging Face model name for a given translation pair.
 
         Args:
-        translation_pair: str
-            The translation pair to resolve (e.g., 'en-fr', 'en-es').
+            translation_pair: str
+                The translation pair to resolve (e.g., 'en-fr', 'en-es').
 
         Returns:
-        str
-            The corresponding Hugging Face model name.
+            str
+                The corresponding Hugging Face model name.
 
         Raises:
-        ValueError
-            If the translation pair is not found in the model mappings.
+            ValueError
+                If the translation pair is not found in the model mappings.
         '''
         if not isinstance(translation_pair, str):
             raise ValueError("'translation_pair' must be a string")
@@ -120,11 +120,11 @@ class TranslationModelManager:
             4. Downloads and saves the corresponding tokenizer
             5. Saves both model and tokenizer to a local directory
 
-        ONNX (Open Neural Network Exchange) format provides:
-        - Faster inference compared to PyTorch models
-        - Smaller memory footprint
-        - Cross-platform compatibility
-        - Hardware optimization capabilities
+            ONNX (Open Neural Network Exchange) format provides:
+            - Faster inference compared to PyTorch models
+            - Smaller memory footprint
+            - Cross-platform compatibility
+            - Hardware optimization capabilities
 
         Args:
             translation_pair: str
