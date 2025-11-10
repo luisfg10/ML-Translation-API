@@ -2,6 +2,7 @@
 __pycache__/
 .vscode/
 venv/
+models/downloads/*
 
 # .env file
 .env

@@ -28,4 +28,5 @@ This project uses ML transformers models from the HuggingFace `Tranformers` libr
 ## Relevant Documentation
 * [FastAPI](https://fastapi.tiangolo.com/tutorial/)
 * [HuggingFace Hub Translation models](https://huggingface.co/models?pipeline_tag=translation&sort=trending)
+* [ONNX](https://onnx.ai/)
 * [Flake8](https://flake8.pycqa.org/en/latest/user/configuration.html)

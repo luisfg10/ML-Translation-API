@@ -23,7 +23,7 @@ class PredictData(BaseModel):
 
     # example of request
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "source": "en",
                 "target": "es",

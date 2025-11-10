@@ -1,0 +1,255 @@
+# Third-party imports
+from loguru import logger
+from typing import Dict, Optional
+from pathlib import Path
+from transformers import AutoTokenizer
+from optimum.onnxruntime import ORTModelForSeq2SeqLM
+
+# Local code imports
+from settings.config import (
+    AVAILABLE_TRANSLATIONS,
+    MODEL_STORAGE_MODES,
+    LOCAL_MODEL_DIR
+)
+
+
+class TranslationModelManager:
+    '''
+    Helper class for managing interactions with the ML models in the project,
+    including:
+        - loading models from Hugging Face
+        - downloading models locally
+        - uploading models to S3
+        - downloading models from S3
+        - loading models and conducting inference
+    '''
+    def __init__(
+            self,
+            model_mappings: Dict[str, str],
+            model_storage_mode: str
+    ) -> None:
+        '''
+        Initialize the ModelManager class.
+
+        Args:
+        model_mappings: Dict[str, str]
+            A dictionary mapping translation pairs to HuggingFace hub
+            model names.
+            e.g., {'en-fr': 'Helsinki-NLP/opus-mt-en-fr', ...}
+        model_storage_mode: str
+            The mode of model storage, either 's3' or 'local'.
+            This parameter informs how models will be saved and loaded.
+        '''
+        # check inputs
+        if (
+            not isinstance(model_mappings, dict)
+            or not model_mappings
+        ):
+            raise ValueError(
+                "model_mappings must be a non-empty dictionary"
+            )
+        elif (
+            not isinstance(model_storage_mode, str)
+            or model_storage_mode.lower() not in MODEL_STORAGE_MODES
+        ):
+            raise ValueError(
+                f"model_storage_mode must be one of "
+                f"{MODEL_STORAGE_MODES}"
+            )
+
+        # save values to self
+        self.model_mappings = {
+            k.lower(): v for k, v in model_mappings.items()
+            if isinstance(k, str)
+            and isinstance(v, str)
+            and k.lower() in AVAILABLE_TRANSLATIONS
+        }
+        self.model_storage_mode = model_storage_mode.lower()
+        logger.info(
+            f"Initialized ModelManager with storage mode: "
+            f"{self.model_storage_mode} "
+            "and translation pairs: "
+            f"{list(self.model_mappings.keys())}"
+        )
+
+    def _resolve_model_from_translation_pair(
+            self,
+            translation_pair: str
+    ) -> str:
+        '''
+        Resolves the Hugging Face model name for a given translation pair.
+
+        Args:
+        translation_pair: str
+            The translation pair to resolve (e.g., 'en-fr', 'en-es').
+
+        Returns:
+        str
+            The corresponding Hugging Face model name.
+
+        Raises:
+        ValueError
+            If the translation pair is not found in the model mappings.
+        '''
+        if not isinstance(translation_pair, str):
+            raise ValueError("'translation_pair' must be a string")
+        translation_pair = translation_pair.lower()
+        if translation_pair not in self.model_mappings:
+            raise ValueError(
+                f"Translation pair '{translation_pair}' not found. "
+                f"Available pairs: "
+                f"{list(self.model_mappings.keys())}"
+            )
+        return self.model_mappings[translation_pair]
+
+    def _download_model_locally(
+            self,
+            translation_pair: str,
+            avoid_redownload: bool = True
+    ) -> None:
+        '''
+        Fetches a model and its tokenizerfrom the Hugging Face hub and saves it locally
+        in a '.onnx' format in the specified local directory.
+        Handles failures gracefully by logging errors without raising exceptions.
+
+        Logic:
+            1. Validates the translation pair exists in model mappings
+            2. Downloads the PyTorch model from Hugging Face Hub
+            3. Converts the model to ONNX format using Optimum library
+               for better inference performance
+            4. Downloads and saves the corresponding tokenizer
+            5. Saves both model and tokenizer to a local directory
+
+        ONNX (Open Neural Network Exchange) format provides:
+        - Faster inference compared to PyTorch models
+        - Smaller memory footprint
+        - Cross-platform compatibility
+        - Hardware optimization capabilities
+
+        Args:
+            translation_pair: str
+                The translation pair to download (e.g., 'en-fr', 'en-es').
+            avoid_redownload: bool
+                If True, skips download if model already exists locally.
+        '''
+        # get model name from translation pair
+        try:
+            model_name = self._resolve_model_from_translation_pair(
+                translation_pair=translation_pair
+            )
+        except ValueError as e:
+            logger.error(str(e))
+            return
+
+        # check if directory already exists locally
+        expected_model_dir = Path(LOCAL_MODEL_DIR) / translation_pair
+        if avoid_redownload and expected_model_dir.exists():
+            logger.success(
+                f"Model for translation pair '{translation_pair}' "
+                f"already exists locally at {expected_model_dir}, "
+                "so download is skipped. To alter this behavior, set "
+                f"'avoid_redownload=False'."
+            )
+            return
+
+        # local download
+        logger.info(
+            f"Downloading model '{model_name}' for translation pair "
+            f"'{translation_pair}' from Hugging Face hub..."
+        )
+        try:
+            # create local directory structure
+            model_dir = Path(LOCAL_MODEL_DIR) / translation_pair
+            model_dir.mkdir(parents=True, exist_ok=True)
+            logger.debug(f"Created model directory: {model_dir}")
+
+            # download and convert model to ONNX format
+            logger.debug("Converting model to ONNX format...")
+            onnx_model = ORTModelForSeq2SeqLM.from_pretrained(
+                model_name,
+                export=True,  # Automatically convert to ONNX
+                cache_dir=str(model_dir)
+            )
+
+            # download tokenizer alongside the model
+            logger.debug("Downloading tokenizer...")
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+            # save both model and tokenizer to local directory
+            onnx_model.save_pretrained(str(model_dir))
+            tokenizer.save_pretrained(str(model_dir))
+
+            logger.success(
+                f"Successfully saved ONNX model and tokenizer for '{translation_pair}' "
+                f"to {model_dir}"
+            )
+
+        except Exception as e:
+            logger.error(
+                f"Failed to download and convert model '{model_name}': {str(e)}"
+            )
+            return
+
+    def _upload_model_to_s3(
+            self,
+            translation_pair: str,
+            delete_local_after_upload: bool = False
+    ) -> None:
+        '''
+        Fetches a directory with the 'translation_pair' name in LOCAL_MODEL_DIR
+        and uploads it to AWS S3, if it exists.
+
+        Args:
+            translation_pair: str
+                The translation pair to upload (e.g., 'en-fr', 'en-es').
+            delete_local_after_upload: bool
+                Whether to delete the local model files after uploading to S3.
+        '''
+        raise NotImplementedError(
+            "S3 upload functionality is not yet implemented."
+        )
+
+    def _download_model_from_s3(
+            self,
+            translation_pair: str,
+            bucket_name: str
+    ) -> None:
+        '''
+        Downloads a model from AWS S3 and saves it locally. Expects the directory within
+        the bucket to follow the format '{LOCAL_MODEL_DIR}/{translation_pair}', and downloads
+        locally using the same naming convention.
+
+        Args:
+            translation_pair: str
+                The translation pair to download (e.g., 'en-fr', 'en-es').
+            bucket_name: str
+                The name of the S3 bucket to download the model from.
+        '''
+        raise NotImplementedError(
+            "S3 download functionality is not yet implemented."
+        )
+
+    def upload_model(
+            self,
+            translation_pair: str,
+            bucket_name: Optional[str] = None
+    ) -> None:
+        '''
+        Router method to upload/save a model based on the specified upload mode saved
+        to the ModelManager instance.
+
+        Args:
+            translation_pair: str
+                The translation pair to upload (e.g., 'en-fr', 'en-es').
+            bucket_name: Optional[str]
+                The name of the S3 bucket to upload the model to.
+                Required if self.model_storage_mode is 's3'.
+        '''
+        self._download_model_locally(translation_pair=translation_pair)
+
+        if self.model_storage_mode == 's3':
+            if not bucket_name:
+                raise ValueError(
+                    "bucket_name must be provided for 's3' model storage mode."
+                )
+            self._upload_model_to_s3(translation_pair=translation_pair)

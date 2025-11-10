@@ -1,11 +1,13 @@
 # Third-party imports
+import json
 import click
 import uvicorn
 from typing import Optional
 
-# Local imports
-from app.main import app
-from settings.config import UPLOAD_MODES
+# Local code imports
+from models.management import TranslationModelManager
+from app.definition import app
+from settings.config import MODEL_STORAGE_MODES
 
 
 # ---------------------------------------------------------------------
@@ -17,33 +19,43 @@ def cli():
 
 
 @cli.command()
-@click.option("--model-name", type=str, required=True)
+@click.option("--translation-pair", type=str, required=True)
 @click.option(
-    "--upload-mode",
-    type=click.Choice(UPLOAD_MODES, case_sensitive=False),
+    "--model-storage-mode",
+    type=click.Choice(MODEL_STORAGE_MODES, case_sensitive=False),
     required=True
 )
 @click.option("--bucket-name", type=str, required=False)
 def upload_model(
-        model_name: str,
-        upload_mode: str,
-        bucket_name: Optional[str] = None
+    translation_pair: str,
+    model_storage_mode: str,
+    bucket_name: Optional[str] = None
 ) -> None:
     '''
     Uploads/saves a translation model from the Transformers library to a specified location.
 
     Args:
-        model_name: str
-            The name of the model to upload.
-        upload_mode: str
-            The mode of upload, either 's3' for AWS S3 or 'local' for local storage.
-            If 's3' is selected, bucket_name must be provided.
-            If 'local' is selected, the model will be saved in the local
-            'models/downloads' directory.
-        bucket_name: Optional[str]
-            The name of the S3 bucket to upload the model to.
-            Required if upload_mode is 's3'.
+    translation_pair: str
+        The translation pair to upload (e.g., 'en-fr', 'en-es').
+    model_storage_mode: str
+        The mode of upload, either 's3' for AWS S3 or 'local' for local storage.
+        If 's3' is selected, bucket_name must be provided.
+    bucket_name: Optional[str]
+        The name of the S3 bucket to upload the model to.
+        Required if model_storage_mode is 's3'.
     '''
+    # read settings/model_mappings.py to get model mappings
+    with open('settings/model_mappings.json', 'r') as f:
+        model_mappings = json.load(f)
+
+    model_manager = TranslationModelManager(
+        model_mappings=model_mappings,
+        model_storage_mode=model_storage_mode,
+    )
+    model_manager.upload_model(
+        translation_pair=translation_pair,
+        bucket_name=bucket_name
+    )
 
 
 def run_api_on_server():
