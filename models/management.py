@@ -8,7 +8,7 @@ from optimum.onnxruntime import ORTModelForSeq2SeqLM
 # Local code imports
 from settings.config import (
     AVAILABLE_TRANSLATIONS,
-    MODEL_STORAGE_MODES,
+    AVAILABLE_MODEL_STORAGE_MODES,
     LOCAL_MODEL_DIR
 )
 
@@ -50,11 +50,11 @@ class TranslationModelManager:
             )
         elif (
             not isinstance(model_storage_mode, str)
-            or model_storage_mode.lower() not in MODEL_STORAGE_MODES
+            or model_storage_mode.lower() not in AVAILABLE_MODEL_STORAGE_MODES
         ):
             raise ValueError(
                 f"model_storage_mode must be one of "
-                f"{MODEL_STORAGE_MODES}"
+                f"{AVAILABLE_MODEL_STORAGE_MODES}"
             )
 
         # save values to self
@@ -257,6 +257,11 @@ class TranslationModelManager:
                     "bucket_name must be provided for 's3' model storage mode."
                 )
             self._upload_model_to_s3(translation_pair=translation_pair)
+
+    def load_models_for_api(self) -> None:
+        '''
+        Executes logic to load all available models for usage in the API.
+        '''
 
     def predict(
             self,

@@ -1,17 +1,14 @@
 # ML Translation API
 
-This project uses ML transformers models from the HuggingFace `Tranformers` library and serves them as an API service using `FastAPI`. The models are loaded to and from AWS S3 using the `boto3` library.
+This project uses translation ML models from the HuggingFace `Transformers` library and serves them as an API service using `FastAPI`. The models are optionally loaded to and from AWS S3 using the `boto3` library.
 
 
 ## Index
-* [Overview](#overview)
 * [Repository Structure](#repository-structure)
 * [How to run locally](#how-to-run-locally)
 * [Optional: Deploy in public URL using AWS EC2](#optional-deploy-in-public-url-using-aws-ec2)
 * [Upcoming features](#upcoming-features)
 * [Relevant Documentation](#relevant-documentation)
-
-## Overview
 
 ## Repository Structure
 

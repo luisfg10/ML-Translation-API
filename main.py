@@ -1,14 +1,14 @@
 # Third-party imports
 from loguru import logger
+import os
 import json
 import click
 import uvicorn
 from typing import Optional
 
 # Local code imports
+from settings.config import AVAILABLE_MODEL_STORAGE_MODES
 from models.management import TranslationModelManager
-from app.definition import app
-from settings.config import MODEL_STORAGE_MODES
 
 
 # ---------------------------------------------------------------------
@@ -26,7 +26,7 @@ def cli():
 @click.option("--translation-pair", type=str, required=True)
 @click.option(
     "--model-storage-mode",
-    type=click.Choice(MODEL_STORAGE_MODES, case_sensitive=False),
+    type=click.Choice(AVAILABLE_MODEL_STORAGE_MODES, case_sensitive=False),
     required=True
 )
 @click.option("--bucket-name", type=str, required=False)
@@ -104,10 +104,37 @@ def test_model_prediction(
 # API server command
 
 
-def run_api_on_server():
+@cli.command()
+@click.option(
+    "--model-storage-mode",
+    type=click.Choice(AVAILABLE_MODEL_STORAGE_MODES, case_sensitive=False),
+    required=True
+)
+@click.option("--bucket-name", type=str, required=False)
+def run_api_on_server(
+        model_storage_mode: str,
+        bucket_name: Optional[str] = None
+):
     '''
     Runs the FastAPI application using a Uvicorn server.
+
+    Args:
+        model_storage_mode: str
+            The mode of model storage, either 's3' for AWS S3 or 'local' for local storage.
+        bucket_name: Optional[str]
+            The name of the S3 bucket to load the model from.
+            Required if model_storage_mode is 's3'.
     '''
+    # Import inside command for lazy loading
+    from app.definition import app
+
+    # export CLI command args to env vars
+    if model_storage_mode:
+        os.environ['MODEL_STORAGE_MODE'] = model_storage_mode
+    if bucket_name:
+        os.environ['BUCKET_NAME'] = bucket_name
+
+    # run app
     uvicorn.run(
         app=app,
         host="0.0.0.0",
