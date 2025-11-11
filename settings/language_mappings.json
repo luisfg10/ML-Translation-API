@@ -1,6 +1,6 @@
 {
-    "english": "en",
-    "french": "fr",
-    "spanish": "es",
-    "german": "de"
+    "en": "english",
+    "fr": "french",
+    "es": "spanish",
+    "de": "german"
 }

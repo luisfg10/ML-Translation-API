@@ -65,6 +65,10 @@ class TranslationModelManager:
             and k.lower() in AVAILABLE_TRANSLATIONS
         }
         self.model_storage_mode = model_storage_mode.lower()
+
+        # Add cache for loaded models
+        self._model_cache = {}
+        self._tokenizer_cache = {}
         logger.info(
             f"Initialized ModelManager with storage mode: "
             f"{self.model_storage_mode} "
@@ -253,3 +257,84 @@ class TranslationModelManager:
                     "bucket_name must be provided for 's3' model storage mode."
                 )
             self._upload_model_to_s3(translation_pair=translation_pair)
+
+    def predict(
+            self,
+            translation_pair: str,
+            text: str,
+            max_length: Optional[int] = 512,
+            num_beams: Optional[int] = 4,
+            early_stopping: Optional[bool] = True
+    ) -> str:
+        '''
+        Translates the given text using the model corresponding to the specified
+        translation pair.
+
+        To improve performance, caches loaded models in memory to avoid loading
+        them redundantly for several predictions.
+        Expects the model to be already downloaded locally in the path
+            '{LOCAL_MODEL_DIR}/{translation_pair}' in ONNX format.
+
+        Args:
+            translation_pair: str
+                The translation pair to use (e.g., 'en-fr', 'en-es').
+            text: str
+                The text to translate.
+            max_length: Optional[int]
+                Maximum length of generated translation, in tokens (default: 512).
+            num_beams: Optional[int] = 4,
+                Number of beams for beam search.
+                Higher = better quality but slower (default: 4).
+            early_stopping: Optional[bool] = True,
+                Whether to stop generation when all beams finish (default: True).
+                If False, generation continues until max_length is reached.
+
+        Returns:
+            str
+                The translated text.
+        '''
+        # Validate inputs
+        if not isinstance(text, str) or not text.strip():
+            raise ValueError("'text' must be a non-empty string")
+
+        # Check if model exists locally
+        model_dir = Path(LOCAL_MODEL_DIR) / translation_pair
+        if not model_dir.exists():
+            raise FileNotFoundError(
+                f"Model for translation pair '{translation_pair}' not found at '{model_dir}'. "
+                "Please download the model first using the 'upload_model()' method."
+            )
+
+        # Load from cache or disk
+        if translation_pair not in self._model_cache:
+            logger.debug(f"Loading model from '{model_dir}' (first time)")
+            self._model_cache[translation_pair] = ORTModelForSeq2SeqLM.from_pretrained(
+                str(model_dir),
+                encoder_file_name="encoder_model.onnx",
+                decoder_file_name="decoder_model.onnx",
+                decoder_with_past_file_name="decoder_with_past_model.onnx"
+            )
+            self._tokenizer_cache[translation_pair] = AutoTokenizer.from_pretrained(
+                str(model_dir)
+            )
+        else:
+            logger.debug(f"Using cached model for '{translation_pair}'")
+
+        model = self._model_cache[translation_pair]
+        tokenizer = self._tokenizer_cache[translation_pair]
+
+        # Tokenize input text
+        inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+
+        # Generate translation with custom parameters
+        outputs = model.generate(
+            **inputs,
+            max_length=max_length,
+            num_beams=num_beams,
+            early_stopping=early_stopping
+        )
+
+        # Decode output
+        translated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+        return translated_text

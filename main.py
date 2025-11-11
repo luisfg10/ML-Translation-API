@@ -1,4 +1,5 @@
 # Third-party imports
+from loguru import logger
 import json
 import click
 import uvicorn
@@ -17,6 +18,9 @@ from settings.config import MODEL_STORAGE_MODES
 def cli():
     pass
 
+
+# ---------------------------------------------------------------------
+# Model-related CLI commands
 
 @cli.command()
 @click.option("--translation-pair", type=str, required=True)
@@ -56,6 +60,48 @@ def upload_model(
         translation_pair=translation_pair,
         bucket_name=bucket_name
     )
+
+
+@cli.command()
+@click.option("--translation-pair", type=str, required=True)
+@click.option("--input-text", type=str, required=True)
+def test_model_prediction(
+        translation_pair: str,
+        input_text: str
+) -> None:
+    '''
+    CLI command for individually testing model predictions with
+    already-downloaded models. Outputs only the translated text, while
+    the API endpoint may return additional metadata.
+
+    Args:
+        translation_pair: str
+            The translation pair to test (e.g., 'en-fr', 'en-es').
+        input_text: str
+            The text to translate.
+    '''
+    # read settings/model_mappings.py to get model mappings
+    with open('settings/model_mappings.json', 'r') as f:
+        model_mappings = json.load(f)
+
+    output = TranslationModelManager(
+        model_mappings=model_mappings,
+        model_storage_mode='local',
+    ).predict(
+        translation_pair=translation_pair,
+        text=input_text
+    )
+
+    input_language, output_language = translation_pair.split('-')
+    logger.debug(
+        "Translation data: \n"
+        f"Input in language '{input_language}': {input_text} \n"
+        f"Output in language '{output_language}': {output} \n"
+        f"Model used: {model_mappings[translation_pair]}"
+    )
+
+# ---------------------------------------------------------------------
+# API server command
 
 
 def run_api_on_server():
