@@ -1,4 +1,5 @@
 # Third-party imports
+import json
 from loguru import logger
 from typing import Dict, Optional
 from pathlib import Path
@@ -258,10 +259,83 @@ class TranslationModelManager:
                 )
             self._upload_model_to_s3(translation_pair=translation_pair)
 
-    def load_models_for_api(self) -> None:
+    def load_api_models(
+            self,
+            bucket_name: Optional[str] = None,
+            model_limit: Optional[int] = 3
+    ) -> None:
         '''
-        Executes logic to load all available models for usage in the API.
+        Executes logic to load all available models from AVAILABLE_TRANSLATIONS
+        following the specified model storage mode.
+
+        Args:
+            bucket_name: Optional[str]
+                The name of the S3 bucket to download models from.
+                Required if self.model_storage_mode is 's3'.
+            model_limit: Optional[int]
+                Maximum number of models to load at once to avoid memory overload.
         '''
+        for translation_pair in AVAILABLE_TRANSLATIONS[:model_limit]:
+            if self.model_storage_mode == 'local':
+                self._download_model_locally(translation_pair=translation_pair)
+            elif self.model_storage_mode == 's3':
+                self._download_model_from_s3(
+                    translation_pair=translation_pair,
+                    bucket_name=bucket_name
+                )
+
+    def get_models_info(
+            self,
+            return_model_config: Optional[bool] = False
+    ) -> Dict[str, str]:
+        '''
+        Returns information about the currently-loaded models available for the API per
+        translation pair.
+
+        Args:
+            return_model_config: bool
+                If True, returns additional model configuration details from the
+                'config.json' file saved alongside the model.
+
+        Returns:
+            Dict[str, str]
+                A dictionary with translation pairs as keys and model names as values.
+
+        >>> model_manager = TranslationModelManager(
+        ...     model_mappings={'en-fr': 'Helsinki-NLP/opus-mt-en-fr'},
+        ...     model_storage_mode='local'
+        ... )
+        >>> print(model_manager.get_models_info(return_model_config=True))
+        {
+            'en-fr': {
+                'model_name': 'Helsinki-NLP/opus-mt-en-fr',
+                'file_type': 'ONNX',
+                'config': { ... }  # contents of {LOCAL_MODEL_DIR}/{translation_pair}/config.json
+            },
+            ...
+        }
+        '''
+        # walk directory to find downloaded models
+        models = {}
+        for translation_pair in AVAILABLE_TRANSLATIONS:
+            model_dir = Path(LOCAL_MODEL_DIR) / translation_pair
+            if model_dir.exists():
+                models[translation_pair] = {
+                    "model_name": self.model_mappings[translation_pair],
+                    "file_type": "ONNX"
+                }
+                if return_model_config:
+                    config_path = model_dir / "config.json"
+                    if config_path.exists():
+                        try:
+                            with open(config_path, 'r') as f:
+                                config_data = json.load(f)
+                            models[translation_pair]["config"] = config_data
+                        except Exception as e:
+                            logger.error(
+                                f"Failed to read config for '{translation_pair}': {str(e)}"
+                            )
+        return models
 
     def predict(
             self,
@@ -269,7 +343,8 @@ class TranslationModelManager:
             text: str,
             max_length: Optional[int] = 512,
             num_beams: Optional[int] = 4,
-            early_stopping: Optional[bool] = True
+            early_stopping: Optional[bool] = True,
+            raise_on_missing_model: Optional[bool] = True
     ) -> str:
         '''
         Translates the given text using the model corresponding to the specified
@@ -288,11 +363,15 @@ class TranslationModelManager:
             max_length: Optional[int]
                 Maximum length of generated translation, in tokens (default: 512).
             num_beams: Optional[int] = 4,
-                Number of beams for beam search.
+                Number of beams for beam search, aka the number of parallel translations to run.
                 Higher = better quality but slower (default: 4).
             early_stopping: Optional[bool] = True,
                 Whether to stop generation when all beams finish (default: True).
                 If False, generation continues until max_length is reached.
+            raise_on_missing_model: Optional[bool] = True
+                If True, raises an error if the model for the specified translation pair
+                is not found locally.
+                If False, attempts to download the model and proceed with the prediction.
 
         Returns:
             str
@@ -305,10 +384,17 @@ class TranslationModelManager:
         # Check if model exists locally
         model_dir = Path(LOCAL_MODEL_DIR) / translation_pair
         if not model_dir.exists():
-            raise FileNotFoundError(
-                f"Model for translation pair '{translation_pair}' not found at '{model_dir}'. "
-                "Please download the model first using the 'upload_model()' method."
-            )
+            if raise_on_missing_model:
+                raise FileNotFoundError(
+                    f"Model for translation pair '{translation_pair}' not found at '{model_dir}'. "
+                    "Please download the model first using the 'upload_model()' method."
+                )
+            else:
+                logger.warning(
+                    f"Model for translation pair '{translation_pair}' not found locally. "
+                    "Attempting to download..."
+                )
+                self._download_model_locally(translation_pair=translation_pair)
 
         # Load from cache or disk
         if translation_pair not in self._model_cache:

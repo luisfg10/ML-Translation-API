@@ -1,7 +1,8 @@
 # Third-party imports
+from loguru import logger
 import os
 import json
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 
 # Local imports
 from settings.config import (
@@ -10,9 +11,17 @@ from settings.config import (
     API_DESCRIPTION
 )
 from models.management import TranslationModelManager
-from app.schemas import PredictData
+from app.schemas import (
+    RootResponse,
+    HealthResponse,
+    ModelsResponse,
+    PredictRequest,
+    PredictResponse,
+)
 
-# load translation models outside of endpoints
+# ---------------------------------------------------------------------
+# Model loading (outside endpoints)
+
 model_storage_mode = os.getenv('MODEL_STORAGE_MODE', 'local')
 bucket_name = os.getenv('BUCKET_NAME', None)
 with open('settings/model_mappings.json', 'r') as f:
@@ -21,6 +30,10 @@ model_manager = TranslationModelManager(
     model_mappings=model_mappings,
     model_storage_mode=model_storage_mode,
 )
+model_manager.load_api_models(bucket_name=bucket_name)
+
+# ---------------------------------------------------------------------
+# Define endpoints
 
 # initialize API
 app = FastAPI(
@@ -29,11 +42,8 @@ app = FastAPI(
     version=API_VERSION
 )
 
-# ---------------------------------------------------------------------
-# Define endpoints
 
-
-@app.get("/")
+@app.get("/", response_model=RootResponse)
 def root():
     '''
     Root endpoint to return base app info.
@@ -45,7 +55,7 @@ def root():
     }
 
 
-@app.get("/health")
+@app.get("/health", response_model=HealthResponse)
 def health():
     '''
     Health check endpoint to return API health status.
@@ -53,25 +63,55 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/model")
-def model():
+@app.get("/models", response_model=ModelsResponse)
+def models(
+    return_model_config: bool = Query(
+        default=False,
+        description="Include detailed model configuration metadata in the response.",
+        example=True
+    )
+):
     '''
     Returns information about the loaded models.
     '''
-    pass
+    model_metadata = model_manager.get_models_info(
+        return_model_config=return_model_config
+    )
+    return {"models": model_metadata}
 
 
-@app.post("/predict")
-def predict(data: PredictData):
+@app.post("/predict", response_model=PredictResponse)
+def predict(request: PredictRequest):
     '''
-    Prediction endpoint to return model predictions.
-    '''
-    pass
+    Translation endpoint - handles both single and batch predictions.
 
+    Send a single item in the array for individual translation,
+    or multiple items for batch processing.
+    '''
+    results = []
 
-@app.post("/batch_predict")
-def batch_predict(data: list[PredictData]):
-    '''
-    Batch predictions endpoint for sending multiple translation requests.
-    '''
-    pass
+    for index, item in enumerate(request.items):
+        # Construct translation pair from source and target
+        translation_pair = f"{item.source}-{item.target}"
+
+        # Get translation from model manager
+        try:
+            translated_text = model_manager.predict(
+                translation_pair=translation_pair,
+                text=item.text,
+                max_length=item.max_length,
+                num_beams=item.num_beams,
+                early_stopping=item.early_stopping,
+                raise_on_missing_model=False
+            )
+            results.append({
+                "position": index,
+                "result": translated_text
+            })
+        except Exception as e:
+            logger.error(
+                f"Translation failed for item at position {index} "
+                f"with request data {item.model_dump()} "
+                f"and exception: {str(e)}"
+            )
+    return {"results": results}
