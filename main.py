@@ -111,10 +111,16 @@ def test_model_prediction(
     required=True
 )
 @click.option("--bucket-name", type=str, required=False)
+@click.option("--host", type=str, required=False)
+@click.option("--port", type=int, required=False)
+@click.option("--log-level", type=str, required=False)
 def run_api_on_server(
         model_storage_mode: str,
-        bucket_name: Optional[str] = None
-):
+        bucket_name: Optional[str] = None,
+        host: Optional[str] = "0.0.0.0",
+        port: Optional[int] = 8000,
+        log_level: Optional[str] = "debug"        
+) -> None:
     '''
     Runs the FastAPI application using a Uvicorn server.
 
@@ -124,6 +130,13 @@ def run_api_on_server(
         bucket_name: Optional[str]
             The name of the S3 bucket to load the model from.
             Required if model_storage_mode is 's3'.
+        host: Optional[str]
+            The host address to bind the server to. Default is "0.0.0.0".
+        port: Optional[int]
+            The port number to bind the server to. Default is 8000.
+        log_level: Optional[str]
+            The logging level for the server. Default is "debug".
+            Other options include "info", "warning", "error".
     '''
     # Import inside command for lazy loading
     from app.definition import app
@@ -137,9 +150,9 @@ def run_api_on_server(
     # run app
     uvicorn.run(
         app=app,
-        host="0.0.0.0",
-        port=8000,
-        debug=True
+        host=host,
+        port=port,
+        log_level=log_level
     )
 
 

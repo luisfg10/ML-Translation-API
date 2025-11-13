@@ -13,6 +13,15 @@ class RootResponse(BaseModel):
     version: str = Field(..., description="Version of the API")
     description: str = Field(..., description="Description of the API")
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "name": "Translation API",
+                "version": "0.0.1",
+                "description": "API for text translation using pre-trained Transformer models."
+            }
+        }
+
 
 # ------------------------------------------------------------------------------------------
 # Health (/health) endpoint
@@ -22,6 +31,13 @@ class HealthResponse(BaseModel):
     Schema for the health check endpoint response.
     '''
     status: str = Field(..., description="Health status of the API")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "status": "ok"
+            }
+        }
 
 # ------------------------------------------------------------------------------------------
 # Models (/models) endpoint
@@ -60,7 +76,12 @@ class ModelsResponse(BaseModel):
                     },
                     "en-fr": {
                         "model_name": "Helsinki-NLP/opus-mt-en-fr",
-                        "file_type": "ONNX"
+                        "file_type": "ONNX",
+                        "config": {
+                            "vocab_size": 64000,
+                            "max_position_embeddings": 512,
+                            "num_layers": 6
+                        }
                     }
                 }
             }
@@ -124,47 +145,26 @@ class PredictRequest(BaseModel):
 
     class Config:
         json_schema_extra = {
-            "examples": [
-                {
-                    "summary": "Single Translation",
-                    "description": "Translate a single text",
-                    "value": {
-                        "items": [
-                            {
-                                "source": "en",
-                                "target": "es",
-                                "text": "Hello, how are you?",
-                                "max_length": 512,
-                                "num_beams": 4,
-                                "early_stopping": True
-                            }
-                        ]
+            "example": {
+                "items": [
+                    {
+                        "source": "en",
+                        "target": "es",
+                        "text": "Hello, how are you?",
+                        "max_length": 512,
+                        "num_beams": 4,
+                        "early_stopping": True
+                    },
+                    {
+                        "source": "fr",
+                        "target": "de",
+                        "text": "Excusez-moi, je parle pas français.",
+                        "max_length": 256,
+                        "num_beams": 3,
+                        "early_stopping": True
                     }
-                },
-                {
-                    "summary": "Batch Translation",
-                    "description": "Translate multiple texts",
-                    "value": {
-                        "items": [
-                            {
-                                "source": "en",
-                                "target": "es",
-                                "text": "Hello, how are you?"
-                            },
-                            {
-                                "source": "en",
-                                "target": "fr",
-                                "text": "Good morning!"
-                            },
-                            {
-                                "source": "fr",
-                                "target": "de",
-                                "text": "Comment allez-vous?"
-                            }
-                        ]
-                    }
-                }
-            ]
+                ]
+            }
         }
 
 
@@ -211,7 +211,7 @@ class PredictResponse(BaseModel):
                     },
                     {
                         "position": 1,
-                        "result": "Bonjour!"
+                        "result": "Entschuldigen Sie, ich spreche kein Französisch."
                     }
                 ]
             }

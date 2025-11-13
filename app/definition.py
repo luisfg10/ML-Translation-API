@@ -73,6 +73,7 @@ def models(
 ):
     '''
     Returns information about the loaded models.
+    Includes an optional query parameter to return detailed model configuration.
     '''
     model_metadata = model_manager.get_models_info(
         return_model_config=return_model_config
