@@ -2,7 +2,7 @@
 # Global Variables
 
 # python
-PYTHON_INTERPRETER = python3.12
+PYTHON_INTERPRETER = python3.11
 APP = main.py
 
 # test settings
@@ -12,7 +12,7 @@ bucket-name = None
 test_text = Hello, how are you?
 
 # API server settings
-api_host = 127.0.0.1
+api_host = 0.0.0.0
 api_port = 8000
 log_level = debug
 

@@ -19,5 +19,5 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Run the API server
-CMD ["make", "run_api_on_server"]
+# For development: start with bash shell
+CMD ["/bin/bash"]

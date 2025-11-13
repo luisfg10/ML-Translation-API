@@ -74,6 +74,10 @@ def test_model_prediction(
     already-downloaded models. Outputs only the translated text, while
     the API endpoint may return additional metadata.
 
+    Note: This means of generating predictions is significantly slower
+    than using the API server, as the model has to be loaded from disk
+    every time this command is run (API uses model caching).
+
     Args:
         translation_pair: str
             The translation pair to test (e.g., 'en-fr', 'en-es').
@@ -119,7 +123,7 @@ def run_api_on_server(
         bucket_name: Optional[str] = None,
         host: Optional[str] = "0.0.0.0",
         port: Optional[int] = 8000,
-        log_level: Optional[str] = "debug"        
+        log_level: Optional[str] = "debug"
 ) -> None:
     '''
     Runs the FastAPI application using a Uvicorn server.
@@ -131,7 +135,9 @@ def run_api_on_server(
             The name of the S3 bucket to load the model from.
             Required if model_storage_mode is 's3'.
         host: Optional[str]
-            The host address to bind the server to. Default is "0.0.0.0".
+            The host address to bind the server to.
+            Default is "0.0.0.0", which is the required value if running from a Docker
+            container to allow external connections.
         port: Optional[int]
             The port number to bind the server to. Default is 8000.
         log_level: Optional[str]

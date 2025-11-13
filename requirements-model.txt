@@ -1,4 +1,0 @@
-optimum[onnxruntime]==2.0.0
-sacremoses==0.1.1
-sentencepiece==0.2.1
-transformers==4.55.4
