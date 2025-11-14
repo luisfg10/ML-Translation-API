@@ -2,7 +2,7 @@
 
 This project uses translation ML models from the HuggingFace `Transformers` library and serves them as a lightweight API service using `FastAPI` as the web framework on a `uvicorn` server and `optimum.onnxruntime` for model inference optimization. 
 
-For context, this project is able to run the API on a ~5GB Docker container, while projects using frameworks like `torch` can take ~15GB of space due to the additional dependencies required.
+For comparison, this project is able to run the API on a ~5GB Docker container, while projects using frameworks like `torch` can take ~15GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
 
 ## Index
 * [Repository Structure](#repository-structure)
@@ -12,6 +12,42 @@ For context, this project is able to run the API on a ~5GB Docker container, whi
 * [Relevant Documentation](#relevant-documentation)
 
 ## Repository Structure
+
+Here is an overview of the structure of the repository:
+
+```
+ML-Translation-API/
+├── app/                        # Application core modules
+│   ├── definition.py            
+│   └── schemas.py           
+├── exp/                        # API exploration
+│   └── api_exploration.ipynb
+├── models/                     # Model management and utilities
+│   ├── management.py           
+│   └── downloads/              # Downloaded translation models
+│       ├── en-es/              
+│       ├── en-fr/              
+│       └── ...                 
+├── settings/                   # Configuration and settings
+│   ├── config.py               
+│   ├── language_mappings.json  
+│   └── model_mappings.json     
+├── main.py                     # Definition of the main executables + adequation into CLI commands
+├── requirements.txt            
+├── Dockerfile                  # Production Dockerfile
+├── Dockerfile-dev              # Development Dockerfile
+├── .dockerignore               # Files and directories to ignore in Docker builds
+├── Makefile                    # Build and development commands
+└── README.md               
+```
+### `settings/` directory
+This directory contains the required configuration files for the application.
+* `config.py`: Contains the main configuration settings for the API, including the available translation pairs, the available means of uploading/downloading models, and the directory within the project where the models are stored.
+* `language_mappings.json`: A JSON file that maps language codes to their full names (e.g., "en" to "English").
+* `model_mappings.json`: A JSON file that maps translation pairs to their corresponding HuggingFace model names.
+
+### `Makefile` and `main.py`
+The `Makefile` contains several CLI targets to facilitate development and testing of the application. These commands come from the `main.py` file, and are also explained there.
 
 ## Environment variables and API configuration
 

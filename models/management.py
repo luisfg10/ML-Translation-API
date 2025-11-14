@@ -10,7 +10,9 @@ from optimum.onnxruntime import ORTModelForSeq2SeqLM
 from settings.config import (
     AVAILABLE_TRANSLATIONS,
     AVAILABLE_MODEL_STORAGE_MODES,
-    LOCAL_MODEL_DIR
+    LOCAL_MODEL_DIR,
+    STARTUP_MODEL_LOADING_LIMIT,
+    OVERWRITE_EXISTING_MODELS
 )
 
 
@@ -110,10 +112,10 @@ class TranslationModelManager:
     def _download_model_locally(
             self,
             translation_pair: str,
-            avoid_redownload: bool = True
+            overwrite_if_exists: bool = OVERWRITE_EXISTING_MODELS
     ) -> None:
         '''
-        Fetches a model and its tokenizerfrom the Hugging Face hub and saves it locally
+        Fetches a model and its tokenizer from the Hugging Face hub and saves it locally
         in a '.onnx' format in the specified local directory.
         Handles failures gracefully by logging errors without raising exceptions.
 
@@ -134,8 +136,9 @@ class TranslationModelManager:
         Args:
             translation_pair: str
                 The translation pair to download (e.g., 'en-fr', 'en-es').
-            avoid_redownload: bool
-                If True, skips download if model already exists locally.
+            overwrite_if_exists: bool
+                Whether to overwrite existing local model files if they already exist.
+                If False, skips download if files are found locally.
         '''
         # get model name from translation pair
         try:
@@ -148,12 +151,12 @@ class TranslationModelManager:
 
         # check if directory already exists locally
         expected_model_dir = Path(LOCAL_MODEL_DIR) / translation_pair
-        if avoid_redownload and expected_model_dir.exists():
+        if not overwrite_if_exists and expected_model_dir.exists():
             logger.success(
                 f"Model for translation pair '{translation_pair}' "
                 f"already exists locally at {expected_model_dir}, "
                 "so download is skipped. To alter this behavior, set "
-                f"'avoid_redownload=False'."
+                f"'overwrite_if_exists=True'."
             )
             return
 
@@ -262,7 +265,7 @@ class TranslationModelManager:
     def load_api_models(
             self,
             bucket_name: Optional[str] = None,
-            model_limit: Optional[int] = 3
+            model_limit: Optional[int] = STARTUP_MODEL_LOADING_LIMIT
     ) -> None:
         '''
         Executes logic to load all available models from AVAILABLE_TRANSLATIONS
@@ -381,6 +384,9 @@ class TranslationModelManager:
         if not isinstance(text, str) or not text.strip():
             raise ValueError("'text' must be a non-empty string")
 
+        # Check if translation pair is supported (will raise if not)
+        self._resolve_model_from_translation_pair(translation_pair)
+
         # Check if model exists locally
         model_dir = Path(LOCAL_MODEL_DIR) / translation_pair
         if not model_dir.exists():
@@ -396,17 +402,43 @@ class TranslationModelManager:
                 )
                 self._download_model_locally(translation_pair=translation_pair)
 
+                # Check again after download attempt
+                if not model_dir.exists():
+                    raise FileNotFoundError(
+                        f"Failed to download model for translation pair '{translation_pair}'. "
+                        f"Model directory '{model_dir}' does not exist after download attempt."
+                    )
+
         # Load from cache or disk
         if translation_pair not in self._model_cache:
             logger.debug(f"Loading model from '{model_dir}' (first time)")
+
+            # Convert to absolute path to avoid Hugging Face interpreting it as a repo ID
+            abs_model_dir = model_dir.resolve()
+            logger.debug(f"Absolute model directory: {abs_model_dir}")
+
+            # Verify that required ONNX files exist
+            required_files = [
+                "encoder_model.onnx",
+                "decoder_model.onnx",
+                "decoder_with_past_model.onnx"
+            ]
+            missing_files = [f for f in required_files if not (abs_model_dir / f).exists()]
+
+            if missing_files:
+                raise FileNotFoundError(
+                    f"Missing required ONNX model files in '{abs_model_dir}': {missing_files}. "
+                    "The model may not have been properly downloaded or converted."
+                )
+
             self._model_cache[translation_pair] = ORTModelForSeq2SeqLM.from_pretrained(
-                str(model_dir),
+                str(abs_model_dir),
                 encoder_file_name="encoder_model.onnx",
                 decoder_file_name="decoder_model.onnx",
                 decoder_with_past_file_name="decoder_with_past_model.onnx"
             )
             self._tokenizer_cache[translation_pair] = AutoTokenizer.from_pretrained(
-                str(model_dir)
+                str(abs_model_dir)
             )
         else:
             logger.debug(f"Using cached model for '{translation_pair}'")

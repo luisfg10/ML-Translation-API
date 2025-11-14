@@ -1,0 +1,13 @@
+# directories
+exp/*
+venv/*
+.vscode/
+__pycache__/
+
+# files
+LICENSE
+.gitignore
+.env.template
+.flake8
+.DS_Store
+README.md

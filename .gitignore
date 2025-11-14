@@ -6,6 +6,3 @@ models/downloads/*
 
 # .env file
 .env
-
-# specific file types
-*.ipynb

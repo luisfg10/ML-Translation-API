@@ -2,7 +2,7 @@
 from loguru import logger
 import os
 import json
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 
 # Local imports
 from settings.config import (
@@ -115,4 +115,11 @@ def predict(request: PredictRequest):
                 f"with request data {item.model_dump()} "
                 f"and exception: {str(e)}"
             )
+
+    # Return 500 error if no translations were successful
+    if not results:
+        raise HTTPException(
+            status_code=500,
+            detail="All translation attempts failed."
+        )
     return {"results": results}
