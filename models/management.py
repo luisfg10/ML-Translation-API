@@ -6,7 +6,7 @@ from pathlib import Path
 from transformers import AutoTokenizer
 from optimum.onnxruntime import ORTModelForSeq2SeqLM
 
-# Local code imports
+# Local imports
 from settings.config import (
     AVAILABLE_TRANSLATIONS,
     AVAILABLE_MODEL_STORAGE_MODES,
@@ -14,9 +14,10 @@ from settings.config import (
     STARTUP_MODEL_LOADING_LIMIT,
     OVERWRITE_EXISTING_MODELS
 )
+from models.aws import AWSServicesManager
 
 
-class TranslationModelManager:
+class TranslationModelManager(AWSServicesManager):
     '''
     Helper class for managing interactions with the ML models in the project,
     including:
@@ -25,6 +26,8 @@ class TranslationModelManager:
         - uploading models to S3
         - downloading models from S3
         - loading models and conducting inference
+
+    Inherits from AWSServicesManager to handle AWS S3 interactions.
     '''
     def __init__(
             self,
@@ -78,6 +81,9 @@ class TranslationModelManager:
             "and translation pairs: "
             f"{list(self.model_mappings.keys())}"
         )
+
+        # init parent class
+        super().__init__(service='s3', init_client=True)
 
     def _resolve_model_from_translation_pair(
             self,
@@ -197,45 +203,6 @@ class TranslationModelManager:
                 f"Failed to download and convert model '{model_name}': {str(e)}"
             )
             return
-
-    def _upload_model_to_s3(
-            self,
-            translation_pair: str,
-            delete_local_after_upload: bool = False
-    ) -> None:
-        '''
-        Fetches a directory with the 'translation_pair' name in LOCAL_MODEL_DIR
-        and uploads it to AWS S3, if it exists.
-
-        Args:
-            translation_pair: str
-                The translation pair to upload (e.g., 'en-fr', 'en-es').
-            delete_local_after_upload: bool
-                Whether to delete the local model files after uploading to S3.
-        '''
-        raise NotImplementedError(
-            "S3 upload functionality is not yet implemented."
-        )
-
-    def _download_model_from_s3(
-            self,
-            translation_pair: str,
-            bucket_name: str
-    ) -> None:
-        '''
-        Downloads a model from AWS S3 and saves it locally. Expects the directory within
-        the bucket to follow the format '{LOCAL_MODEL_DIR}/{translation_pair}', and downloads
-        locally using the same naming convention.
-
-        Args:
-            translation_pair: str
-                The translation pair to download (e.g., 'en-fr', 'en-es').
-            bucket_name: str
-                The name of the S3 bucket to download the model from.
-        '''
-        raise NotImplementedError(
-            "S3 download functionality is not yet implemented."
-        )
 
     def upload_model(
             self,

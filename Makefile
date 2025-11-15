@@ -21,6 +21,10 @@ log_level = debug
 
 # Testing
 
+list_aws_s3_bucket_contents:
+	$(PYTHON_INTERPRETER) $(APP) list-aws-s3-bucket-contents \
+		--bucket-name $(bucket-name)
+
 upload_model:
 	$(PYTHON_INTERPRETER) $(APP) upload-model \
 		--translation-pair $(translation-pair) \

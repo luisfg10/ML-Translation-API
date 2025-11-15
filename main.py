@@ -8,6 +8,7 @@ from typing import Optional
 
 # Local code imports
 from settings.config import AVAILABLE_MODEL_STORAGE_MODES
+from models.aws import AWSServicesManager
 from models.management import TranslationModelManager
 
 
@@ -17,6 +18,31 @@ from models.management import TranslationModelManager
 @click.group()
 def cli():
     pass
+
+
+# ---------------------------------------------------------------------
+# AWS-related CLI commands
+
+@cli.command()
+@click.option("--bucket-name", type=str, required=True)
+def list_aws_s3_bucket_contents(
+        bucket_name: str
+) -> None:
+    '''
+    Lists the contents of an AWS S3 bucket.
+    Requires AWS credentials to be set in environment variables.
+    Useful for ensuring AWS connection is properly set.
+
+    Args:
+        bucket_name (str)
+            The name of the S3 bucket to list contents from.
+    '''
+    aws_manager = AWSServicesManager(service='s3')
+    response = aws_manager.list_s3_bucket_contents(
+        bucket_name=bucket_name,
+        simplify_response=True
+    )
+    logger.debug(f"S3 Bucket '{bucket_name}' contents: \n{response}")
 
 
 # ---------------------------------------------------------------------
