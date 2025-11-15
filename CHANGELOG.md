@@ -6,5 +6,12 @@ Initial version of the project, including:
 * `/` (root) endpoint
 * `health/` endpoint
 * `model/` endpoint
-* `predict/` endpoint with a specified body schema using Pydantic
-* `batch_predict` endpoint
+* `predict/` endpoint
+
+Also includes:
+* Support for 8 different translation pairs
+* Production Dockerfile
+* Development Dockerfile and deployment instructions
+* Customizable API behavior from `config.py`
+* API exploration files
+* Local model uploading

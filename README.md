@@ -2,7 +2,7 @@
 
 This project uses translation ML models from the HuggingFace `Transformers` library and serves them as a lightweight API service using `FastAPI` as the web framework on a `uvicorn` server and `optimum.onnxruntime` for model inference optimization. 
 
-For comparison, this project is able to run the API on a ~5GB Docker container, while projects using frameworks like `torch` can take ~15GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
+For comparison, this project is able to run the API on a ~4GB Docker container, while projects using frameworks like `torch` can take ~15GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
 
 ## Index
 * [Repository Structure](#repository-structure)
@@ -21,6 +21,7 @@ ML-Translation-API/
 │   ├── definition.py            
 │   └── schemas.py           
 ├── exp/                        # API exploration
+│   ├── postman_collection.json         
 │   └── api_exploration.ipynb
 ├── models/                     # Model management and utilities
 │   ├── management.py           
@@ -49,10 +50,13 @@ This directory contains the required configuration files for the application.
 ### `Makefile` and `main.py`
 The `Makefile` contains several CLI targets to facilitate development and testing of the application. These commands come from the `main.py` file, and are also explained there.
 
+### `exp/` directory
+This directory contains useful material for understanding and exploring the API's capabilities and behavior, including a Jupyter notebook and a Postman collection.
+
 ## Environment variables and API configuration
 
 ## How to run locally  
-The application is meant to be run in a Docker container for ease of deployment and consistency across different environments. 
+It's advised to run the project in a Docker container for ease of deployment and consistency across different environments. Alternatively, it can be run using other options like virtual environments, but this is not covered in this README.
 
 ### First Steps
 
@@ -136,4 +140,6 @@ On a development setting, it's desirable to modify and test out different parts 
 * [FastAPI](https://fastapi.tiangolo.com/tutorial/)
 * [HuggingFace Hub Translation models](https://huggingface.co/models?pipeline_tag=translation&sort=trending)
 * [ONNX](https://onnx.ai/)
+* [Optimum ONNX Runtime](https://huggingface.co/docs/optimum/v1.2.1/en/onnxruntime/modeling_ort)
 * [Flake8](https://flake8.pycqa.org/en/latest/user/configuration.html)
+* [Postman Docs](https://learning.postman.com/docs/introduction/overview/)

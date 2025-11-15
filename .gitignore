@@ -4,5 +4,8 @@ __pycache__/
 venv/
 models/downloads/*
 
-# .env file
+# specific files
 .env
+
+# specific file types
+.DS_Store

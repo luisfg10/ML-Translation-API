@@ -1,0 +1,605 @@
+{
+	"info": {
+		"_postman_id": "1c32bf18-5125-40b9-8627-5acd540cee89",
+		"name": "ML-Translation-API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Root",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						""
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Root",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Sat, 15 Nov 2025 01:58:34 GMT"
+						},
+						{
+							"key": "server",
+							"value": "uvicorn"
+						},
+						{
+							"key": "content-length",
+							"value": "124"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"name\": \"Translation API\",\n    \"version\": \"v0.0.1\",\n    \"description\": \"API for text translation using pre-trained Transformer models.\"\n}"
+				}
+			]
+		},
+		{
+			"name": "Health",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"health"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Health",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Sat, 15 Nov 2025 01:58:13 GMT"
+						},
+						{
+							"key": "server",
+							"value": "uvicorn"
+						},
+						{
+							"key": "content-length",
+							"value": "15"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"status\": \"ok\"\n}"
+				}
+			]
+		},
+		{
+			"name": "Models",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/models?return_model_config=false",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"models"
+					],
+					"query": [
+						{
+							"key": "return_model_config",
+							"value": "false",
+							"description": "Whether to return detailed model information."
+						},
+						{
+							"key": "",
+							"value": null,
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "simple response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/models?return_model_config=false",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"models"
+							],
+							"query": [
+								{
+									"key": "return_model_config",
+									"value": "false",
+									"description": "Whether to return detailed model information."
+								},
+								{
+									"key": "",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Sat, 15 Nov 2025 01:58:02 GMT"
+						},
+						{
+							"key": "server",
+							"value": "uvicorn"
+						},
+						{
+							"key": "content-length",
+							"value": "352"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"models\": {\n        \"en-fr\": {\n            \"model_name\": \"Helsinki-NLP/opus-mt-en-fr\",\n            \"file_type\": \"ONNX\",\n            \"config\": null\n        },\n        \"en-es\": {\n            \"model_name\": \"Helsinki-NLP/opus-mt-en-es\",\n            \"file_type\": \"ONNX\",\n            \"config\": null\n        },\n        \"de-en\": {\n            \"model_name\": \"Helsinki-NLP/opus-mt-de-en\",\n            \"file_type\": \"ONNX\",\n            \"config\": null\n        },\n        \"fr-es\": {\n            \"model_name\": \"Helsinki-NLP/opus-mt-fr-es\",\n            \"file_type\": \"ONNX\",\n            \"config\": null\n        }\n    }\n}"
+				},
+				{
+					"name": "complete response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/models?return_model_config=true",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"models"
+							],
+							"query": [
+								{
+									"key": "return_model_config",
+									"value": "true",
+									"description": "Whether to return detailed model information."
+								},
+								{
+									"key": "",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Sat, 15 Nov 2025 01:57:51 GMT"
+						},
+						{
+							"key": "server",
+							"value": "uvicorn"
+						},
+						{
+							"key": "content-length",
+							"value": "4675"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"models\": {\n        \"en-fr\": {\n            \"model_name\": \"Helsinki-NLP/opus-mt-en-fr\",\n            \"file_type\": \"ONNX\",\n            \"config\": {\n                \"_num_labels\": 3,\n                \"activation_dropout\": 0,\n                \"activation_function\": \"swish\",\n                \"add_bias_logits\": false,\n                \"add_final_layer_norm\": false,\n                \"architectures\": [\n                    \"MarianMTModel\"\n                ],\n                \"attention_dropout\": 0,\n                \"bos_token_id\": 0,\n                \"classif_dropout\": 0,\n                \"classifier_dropout\": 0,\n                \"d_model\": 512,\n                \"decoder_attention_heads\": 8,\n                \"decoder_ffn_dim\": 2048,\n                \"decoder_layerdrop\": 0,\n                \"decoder_layers\": 6,\n                \"decoder_start_token_id\": 59513,\n                \"decoder_vocab_size\": 59514,\n                \"dropout\": 0.1,\n                \"encoder_attention_heads\": 8,\n                \"encoder_ffn_dim\": 2048,\n                \"encoder_layerdrop\": 0,\n                \"encoder_layers\": 6,\n                \"eos_token_id\": 0,\n                \"forced_eos_token_id\": 0,\n                \"gradient_checkpointing\": false,\n                \"id2label\": {\n                    \"0\": \"LABEL_0\",\n                    \"1\": \"LABEL_1\",\n                    \"2\": \"LABEL_2\"\n                },\n                \"init_std\": 0.02,\n                \"is_encoder_decoder\": true,\n                \"label2id\": {\n                    \"LABEL_0\": 0,\n                    \"LABEL_1\": 1,\n                    \"LABEL_2\": 2\n                },\n                \"max_length\": null,\n                \"max_position_embeddings\": 512,\n                \"model_type\": \"marian\",\n                \"normalize_before\": false,\n                \"normalize_embedding\": false,\n                \"num_beams\": null,\n                \"num_hidden_layers\": 6,\n                \"pad_token_id\": 59513,\n                \"scale_embedding\": true,\n                \"share_encoder_decoder_embeddings\": true,\n                \"static_position_embeddings\": true,\n                \"transformers_version\": \"4.55.4\",\n                \"use_cache\": true,\n                \"vocab_size\": 59514\n            }\n        },\n        \"en-es\": {\n            \"model_name\": \"Helsinki-NLP/opus-mt-en-es\",\n            \"file_type\": \"ONNX\",\n            \"config\": {\n                \"activation_dropout\": 0,\n                \"activation_function\": \"swish\",\n                \"add_bias_logits\": false,\n                \"add_final_layer_norm\": false,\n                \"architectures\": [\n                    \"MarianMTModel\"\n                ],\n                \"attention_dropout\": 0,\n                \"bos_token_id\": 0,\n                \"classif_dropout\": 0,\n                \"classifier_dropout\": 0,\n                \"d_model\": 512,\n                \"decoder_attention_heads\": 8,\n                \"decoder_ffn_dim\": 2048,\n                \"decoder_layerdrop\": 0,\n                \"decoder_layers\": 6,\n                \"decoder_start_token_id\": 65000,\n                \"decoder_vocab_size\": 65001,\n                \"dropout\": 0.1,\n                \"encoder_attention_heads\": 8,\n                \"encoder_ffn_dim\": 2048,\n                \"encoder_layerdrop\": 0,\n                \"encoder_layers\": 6,\n                \"eos_token_id\": 0,\n                \"extra_pos_embeddings\": 65001,\n                \"force_bos_token_to_be_generated\": false,\n                \"forced_eos_token_id\": 0,\n                \"gradient_checkpointing\": false,\n                \"id2label\": {\n                    \"0\": \"LABEL_0\",\n                    \"1\": \"LABEL_1\",\n                    \"2\": \"LABEL_2\"\n                },\n                \"init_std\": 0.02,\n                \"is_encoder_decoder\": true,\n                \"label2id\": {\n                    \"LABEL_0\": 0,\n                    \"LABEL_1\": 1,\n                    \"LABEL_2\": 2\n                },\n                \"max_length\": null,\n                \"max_position_embeddings\": 512,\n                \"model_type\": \"marian\",\n                \"normalize_before\": false,\n                \"normalize_embedding\": false,\n                \"num_beams\": null,\n                \"num_hidden_layers\": 6,\n                \"pad_token_id\": 65000,\n                \"scale_embedding\": true,\n                \"share_encoder_decoder_embeddings\": true,\n                \"static_position_embeddings\": true,\n                \"transformers_version\": \"4.55.4\",\n                \"use_cache\": true,\n                \"vocab_size\": 65001\n            }\n        },\n        \"de-en\": {\n            \"model_name\": \"Helsinki-NLP/opus-mt-de-en\",\n            \"file_type\": \"ONNX\",\n            \"config\": {\n                \"_num_labels\": 3,\n                \"activation_dropout\": 0,\n                \"activation_function\": \"swish\",\n                \"add_bias_logits\": false,\n                \"add_final_layer_norm\": false,\n                \"architectures\": [\n                    \"MarianMTModel\"\n                ],\n                \"attention_dropout\": 0,\n                \"bos_token_id\": 0,\n                \"classif_dropout\": 0,\n                \"classifier_dropout\": 0,\n                \"d_model\": 512,\n                \"decoder_attention_heads\": 8,\n                \"decoder_ffn_dim\": 2048,\n                \"decoder_layerdrop\": 0,\n                \"decoder_layers\": 6,\n                \"decoder_start_token_id\": 58100,\n                \"decoder_vocab_size\": 58101,\n                \"dropout\": 0.1,\n                \"encoder_attention_heads\": 8,\n                \"encoder_ffn_dim\": 2048,\n                \"encoder_layerdrop\": 0,\n                \"encoder_layers\": 6,\n                \"eos_token_id\": 0,\n                \"forced_eos_token_id\": 0,\n                \"id2label\": {\n                    \"0\": \"LABEL_0\",\n                    \"1\": \"LABEL_1\",\n                    \"2\": \"LABEL_2\"\n                },\n                \"init_std\": 0.02,\n                \"is_encoder_decoder\": true,\n                \"label2id\": {\n                    \"LABEL_0\": 0,\n                    \"LABEL_1\": 1,\n                    \"LABEL_2\": 2\n                },\n                \"max_length\": null,\n                \"max_position_embeddings\": 512,\n                \"model_type\": \"marian\",\n                \"normalize_before\": false,\n                \"normalize_embedding\": false,\n                \"num_beams\": null,\n                \"num_hidden_layers\": 6,\n                \"pad_token_id\": 58100,\n                \"scale_embedding\": true,\n                \"share_encoder_decoder_embeddings\": true,\n                \"static_position_embeddings\": true,\n                \"transformers_version\": \"4.55.4\",\n                \"use_cache\": true,\n                \"vocab_size\": 58101\n            }\n        },\n        \"fr-es\": {\n            \"model_name\": \"Helsinki-NLP/opus-mt-fr-es\",\n            \"file_type\": \"ONNX\",\n            \"config\": {\n                \"_num_labels\": 3,\n                \"activation_dropout\": 0,\n                \"activation_function\": \"swish\",\n                \"add_bias_logits\": false,\n                \"add_final_layer_norm\": false,\n                \"architectures\": [\n                    \"MarianMTModel\"\n                ],\n                \"attention_dropout\": 0,\n                \"bos_token_id\": 0,\n                \"classif_dropout\": 0,\n                \"classifier_dropout\": 0,\n                \"d_model\": 512,\n                \"decoder_attention_heads\": 8,\n                \"decoder_ffn_dim\": 2048,\n                \"decoder_layerdrop\": 0,\n                \"decoder_layers\": 6,\n                \"decoder_start_token_id\": 74821,\n                \"decoder_vocab_size\": 74822,\n                \"dropout\": 0.1,\n                \"encoder_attention_heads\": 8,\n                \"encoder_ffn_dim\": 2048,\n                \"encoder_layerdrop\": 0,\n                \"encoder_layers\": 6,\n                \"eos_token_id\": 0,\n                \"forced_eos_token_id\": 0,\n                \"id2label\": {\n                    \"0\": \"LABEL_0\",\n                    \"1\": \"LABEL_1\",\n                    \"2\": \"LABEL_2\"\n                },\n                \"init_std\": 0.02,\n                \"is_encoder_decoder\": true,\n                \"label2id\": {\n                    \"LABEL_0\": 0,\n                    \"LABEL_1\": 1,\n                    \"LABEL_2\": 2\n                },\n                \"max_length\": null,\n                \"max_position_embeddings\": 512,\n                \"model_type\": \"marian\",\n                \"normalize_before\": false,\n                \"normalize_embedding\": false,\n                \"num_beams\": null,\n                \"num_hidden_layers\": 6,\n                \"pad_token_id\": 74821,\n                \"scale_embedding\": true,\n                \"share_encoder_decoder_embeddings\": true,\n                \"static_position_embeddings\": true,\n                \"transformers_version\": \"4.55.4\",\n                \"use_cache\": true,\n                \"vocab_size\": 74822\n            }\n        }\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Predict",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"items\": [\n    {\n      \"early_stopping\": true,\n      \"max_length\": 512,\n      \"num_beams\": 4,\n      \"source\": \"en\",\n      \"target\": \"es\",\n      \"text\": \"Hello world!\"\n    }\n  ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/predict",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"predict"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Predict",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"early_stopping\": true,\n      \"max_length\": 256,\n      \"num_beams\": 6,\n      \"source\": \"fr\",\n      \"target\": \"es\",\n      \"text\": \"Quand j'étais jeune, j'ai aimé una jeune femme que j'allais épouser. Mais, quand la guerre est venue et m'a enlevé loin d'elle, j'ai cru qu'elle m'ammerait assez pour m'attendre. Quand je suis revenu, elle était dejá marieé.\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/predict",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"predict"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Sat, 15 Nov 2025 01:56:56 GMT"
+						},
+						{
+							"key": "server",
+							"value": "uvicorn"
+						},
+						{
+							"key": "content-length",
+							"value": "242"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [
+						{
+							"expires": "Invalid Date",
+							"domain": "",
+							"path": ""
+						}
+					],
+					"body": "{\n    \"results\": [\n        {\n            \"position\": 0,\n            \"result\": \"Cuando era joven, amé a una mujer joven con la que iba a casarme, pero cuando la guerra vino y me sacó de ella, pensé que me culparía lo suficiente para esperarme, y cuando volví, ya estaba casada.\"\n        }\n    ]\n}"
+				},
+				{
+					"name": "Batch request with failed elements",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"source\": \"en\",\n      \"target\": \"es\",\n      \"text\": \"Let me just say, I thought some English boys would handle themselves alone on an island better than that.\"\n    },\n    {\n      \"source\": \"es\",\n      \"target\": \"ru\",\n      \"text\": \"¿Cómo se dice arriba las manos en ruso?\"\n    },\n    {\n      \"source\": \"de\",\n      \"target\": \"en\",\n      \"text\": \"Diejenigen, die es wissen, schweigen, und diejenigen, die sprechen, wissen es nicht.\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/predict",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"predict"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Sat, 15 Nov 2025 01:55:30 GMT"
+						},
+						{
+							"key": "server",
+							"value": "uvicorn"
+						},
+						{
+							"key": "content-length",
+							"value": "223"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"results\": [\n        {\n            \"position\": 0,\n            \"result\": \"Déjame decir, pensé que algunos chicos ingleses se manejarían solos en una isla mejor que eso.\"\n        },\n        {\n            \"position\": 2,\n            \"result\": \"Those who know are silent, and those who speak do not know.\"\n        }\n    ]\n}"
+				},
+				{
+					"name": "Single item with advanced params",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"early_stopping\": true,\n      \"max_length\": 256,\n      \"num_beams\": 6,\n      \"source\": \"fr\",\n      \"target\": \"es\",\n      \"text\": \"Quand j'étais jeune, j'ai aimé una jeune femme que j'allais épouser. Mais, quand la guerre est venue et m'a enlevé loin d'elle, j'ai cru qu'elle m'ammerait assez pour m'attendre. Quand je suis revenu, elle était dejá marieé.\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/predict",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"predict"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Sat, 15 Nov 2025 01:59:25 GMT"
+						},
+						{
+							"key": "server",
+							"value": "uvicorn"
+						},
+						{
+							"key": "content-length",
+							"value": "242"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"results\": [\n        {\n            \"position\": 0,\n            \"result\": \"Cuando era joven, amé a una mujer joven con la que iba a casarme, pero cuando la guerra vino y me sacó de ella, pensé que me culparía lo suficiente para esperarme, y cuando volví, ya estaba casada.\"\n        }\n    ]\n}"
+				},
+				{
+					"name": "Single item with basic params",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"source\": \"fr\",\n      \"target\": \"es\",\n      \"text\": \"Je crois qu'il fera chaud demain\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/predict",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"predict"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Sat, 15 Nov 2025 02:00:06 GMT"
+						},
+						{
+							"key": "server",
+							"value": "uvicorn"
+						},
+						{
+							"key": "content-length",
+							"value": "69"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"results\": [\n        {\n            \"position\": 0,\n            \"result\": \"Creo que hará calor mañana.\"\n        }\n    ]\n}"
+				},
+				{
+					"name": "Multiple items with partial response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"source\": \"en\",\n      \"target\": \"fr\",\n      \"text\": \"Have you seen the keys? I thought I left them by the counter.\"\n    },\n    {\n      \"source\": \"en\",\n      \"target\": \"es\",\n      \"text\": \"Alligators have a bite strength ten times stronger than a white shark.\"\n    },\n    {\n      \"source\": \"es\",\n      \"target\": \"fr\",\n      \"text\": \"Creo que tu taxi no llegará a tiempo, debiste pedirlo con mayor anticipación.\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/predict",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"predict"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Sat, 15 Nov 2025 02:00:40 GMT"
+						},
+						{
+							"key": "server",
+							"value": "uvicorn"
+						},
+						{
+							"key": "content-length",
+							"value": "179"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"results\": [\n        {\n            \"position\": 0,\n            \"result\": \"Vous avez vu les clés ?\"\n        },\n        {\n            \"position\": 1,\n            \"result\": \"Los caimanes tienen una fuerza de mordida diez veces más fuerte que un tiburón blanco.\"\n        }\n    ]\n}"
+				},
+				{
+					"name": "Failed response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"items\": [\n        {\n            \"early_stopping\": true,\n            \"max_length\": 512,\n            \"num_beams\": 4,\n            \"source\": \"es\",\n            \"target\": \"ch\",\n            \"text\": \"Buenos días, estoy buscando al gerente de este establecimiento. Tengo una propuesta que hacerle.\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/predict",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"predict"
+							]
+						}
+					},
+					"status": "Internal Server Error",
+					"code": 500,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Sat, 15 Nov 2025 02:01:32 GMT"
+						},
+						{
+							"key": "server",
+							"value": "uvicorn"
+						},
+						{
+							"key": "content-length",
+							"value": "45"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"detail\": \"All translation attempts failed.\"\n}"
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://0.0.0.0:8000",
+			"type": "string"
+		}
+	]
+}
