@@ -3,9 +3,13 @@ from loguru import logger
 import click
 import uvicorn
 from typing import Optional
+from pathlib import Path
 
 # Local code imports
-from settings.config import AVAILABLE_MODEL_STORAGE_MODES
+from settings.config import (
+    AVAILABLE_MODEL_STORAGE_MODES,
+    LOCAL_MODEL_DIR
+)
 from settings.environment_config import EnvironmentConfig
 from models.aws import AWSServicesManager
 from models.management import TranslationModelManager
@@ -115,6 +119,43 @@ def test_aws_s3_file_download(
     )
 
 
+@cli.command()
+@click.option(
+    "--s3-bucket-name",
+    type=str,
+    default=EnvironmentConfig.S3_BUCKET_NAME
+)
+@click.option(
+    "--test-translation-pair",
+    type=str,
+    default=EnvironmentConfig.TEST_TRANSLATION_PAIR
+)
+def test_aws_s3_directory_download(
+        s3_bucket_name: str,
+        test_translation_pair: str = EnvironmentConfig.TEST_TRANSLATION_PAIR
+) -> None:
+    '''
+    Downloads all files from a specified S3 directory to a local directory.
+    Only provide the translation pair name, as the process assumes the model
+    is found in s3 using the same directory structure as in the project.
+
+    Args:
+        s3_bucket_name (str)
+            The name of the S3 bucket to download the files from.
+        s3_directory (str)
+            The S3 directory path to download files from.
+        local_directory (str)
+            The local directory where the files will be saved.
+    '''
+    aws_manager = AWSServicesManager(service='s3')
+    directory_path = Path(LOCAL_MODEL_DIR) / test_translation_pair
+    aws_manager.download_directory_from_s3(
+        s3_bucket_name=s3_bucket_name,
+        s3_prefix=directory_path,
+        local_directory=directory_path,
+    )
+
+
 # ---------------------------------------------------------------------
 # Model-related CLI commands
 
@@ -122,7 +163,7 @@ def test_aws_s3_file_download(
 @click.option(
     "--translation-pair",
     type=str,
-    default=EnvironmentConfig.TEST_TRANSLATION_PAIR    
+    default=EnvironmentConfig.TEST_TRANSLATION_PAIR
 )
 @click.option(
     "--model-storage-mode",

@@ -256,7 +256,7 @@ class AWSServicesManager:
     def download_directory_from_s3(
             self,
             s3_bucket_name: str,
-            s3_prefix: str,
+            s3_prefix: Union[str, Path],
             local_directory: Union[str, Path]
     ) -> None:
         '''
@@ -274,9 +274,17 @@ class AWSServicesManager:
         '''
         self._validate_service(required_service='s3')
 
+        # normalize inputs
+        if isinstance(s3_prefix, Path):
+            s3_prefix = str(s3_prefix)
+        if isinstance(local_directory, Path):
+            local_directory = str(local_directory)
+
         paginator = self.client.get_paginator('list_objects_v2')
+        files_found = False
         for page in paginator.paginate(Bucket=s3_bucket_name, Prefix=s3_prefix):
             for obj in page.get('Contents', []):
+                files_found = True
                 s3_filepath = obj['Key']
                 relative_path = os.path.relpath(s3_filepath, s3_prefix)
                 local_filepath = os.path.join(local_directory, relative_path)
@@ -286,7 +294,11 @@ class AWSServicesManager:
                     s3_filepath=s3_filepath,
                     local_filepath=local_filepath
                 )
-        logger.success(
-            f"Directory '{s3_prefix}' downloaded from S3 bucket '{s3_bucket_name}' "
-            f"to '{local_directory}' successfully."
-        )
+
+        if not files_found:
+            logger.warning(f"Directory '{s3_prefix}' not found in S3 bucket '{s3_bucket_name}'.")
+        else:
+            logger.success(
+                f"Directory '{s3_prefix}' downloaded from S3 bucket '{s3_bucket_name}' "
+                f"to '{local_directory}' successfully."
+            )

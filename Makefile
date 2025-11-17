@@ -19,6 +19,9 @@ test_aws_s3_file_upload:
 test_aws_s3_file_download:
 	$(PYTHON_INTERPRETER) $(APP) test-aws-s3-file-download
 
+test_aws_s3_directory_download:
+	$(PYTHON_INTERPRETER) $(APP) test-aws-s3-directory-download
+
 save_model:
 	$(PYTHON_INTERPRETER) $(APP) upload-model
 

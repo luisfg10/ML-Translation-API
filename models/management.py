@@ -238,8 +238,8 @@ class TranslationModelManager(AWSServicesManager):
         )
         self.download_directory_from_s3(
             s3_bucket_name=s3_bucket_name,
-            s3_prefix=expected_model_dir.name,
-            local_directory=expected_model_dir.name
+            s3_prefix=expected_model_dir,
+            local_directory=expected_model_dir
         )
 
     def save_model(
