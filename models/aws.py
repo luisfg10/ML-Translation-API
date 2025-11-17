@@ -1,20 +1,19 @@
+# Third-party imports
 from loguru import logger
 import os
 import boto3
 from typing import Optional, Union
 from pathlib import Path
-from dotenv import load_dotenv
 
-# Load .env file from parent directory
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
-load_dotenv(dotenv_path)
+# Local imports
+from settings.environment_config import EnvironmentConfig
 
 
 class AWSServicesManager:
     def __init__(
             self,
             service: Optional[str] = 's3',
-            aws_access_key: Optional[str] = None,
+            aws_access_key_id: Optional[str] = None,
             aws_secret_access_key: Optional[str] = None,
             aws_region: Optional[str] = None,
             init_client: bool = True
@@ -26,7 +25,7 @@ class AWSServicesManager:
         Args:
             service (str, optional)
                 The AWS service to manage. Defaults to 's3'.
-            aws_access_key (str, optional)
+            aws_access_key_id (str, optional)
                 The AWS access key. If None, will pull value from env vars.
             aws_secret_access_key (str, optional)
                 The AWS secret access key. If None, will pull value from env vars.
@@ -36,14 +35,14 @@ class AWSServicesManager:
                 Whether to initialize the AWS client upon creation. Defaults to True.
         '''
         self.service = service
-        if not aws_access_key:
-            aws_access_key = os.getenv('AWS_ACCESS_KEY')
-        self.aws_access_key = aws_access_key
+        if not aws_access_key_id:
+            aws_access_key_id = EnvironmentConfig.SECRETS.get('aws_access_key_id')
+        self.aws_access_key_id = aws_access_key_id
         if not aws_secret_access_key:
-            aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+            aws_secret_access_key = EnvironmentConfig.SECRETS.get('aws_secret_access_key')
         self.aws_secret_access_key = aws_secret_access_key
         if not aws_region:
-            aws_region = os.getenv('AWS_REGION')
+            aws_region = EnvironmentConfig.SECRETS.get('aws_region')
         self.aws_region = aws_region
 
         if init_client:
@@ -55,7 +54,7 @@ class AWSServicesManager:
         '''
         self.client = boto3.client(
             self.service,
-            aws_access_key_id=self.aws_access_key,
+            aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
             region_name=self.aws_region
         )
@@ -76,34 +75,34 @@ class AWSServicesManager:
 
     def create_s3_bucket(
             self,
-            bucket_name: str,
+            s3_bucket_name: str,
     ) -> None:
         '''
         Creates an S3 bucket with the given name.
 
         Args:
-            bucket_name (str)
+            s3_bucket_name (str)
                 The name of the S3 bucket to create.
         '''
         self._validate_service(required_service='s3')
 
         self.client.create_bucket(
-            Bucket=bucket_name
+            Bucket=s3_bucket_name
         )
-        logger.success(f"S3 bucket '{bucket_name}' created successfully.")
+        logger.success(f"S3 bucket '{s3_bucket_name}' created successfully.")
 
     def list_s3_bucket_contents(
             self,
-            bucket_name: str,
+            s3_bucket_name: str,
             bucket_prefix: Optional[str] = None,
             simplify_response: bool = True,
-            print_response: bool = False
+            verbose: bool = False
     ) -> None:
         '''
         Lists the contents of the specified S3 bucket.
 
         Args:
-            bucket_name (str)
+            s3_bucket_name (str)
                 The name of the S3 bucket to list contents from.
             bucket_prefix (str, optional)
                 The prefix to filter objects in the bucket. Defaults to None.
@@ -111,19 +110,21 @@ class AWSServicesManager:
             simplify_response (bool, optional)
                 Whether to simplify the response to only include object keys and sizes.
                 Defaults to True.
-            print_response (bool, optional)
+            verbose (bool, optional)
                 Whether to print the full response. Defaults to False.
         '''
         self._validate_service(required_service='s3')
+        if not s3_bucket_name:
+            raise ValueError("s3_bucket_name must be provided.")
 
         if bucket_prefix:
             response = self.client.list_objects_v2(
-                Bucket=bucket_name,
+                Bucket=s3_bucket_name,
                 Prefix=bucket_prefix
             )
         else:
             response = self.client.list_objects_v2(
-                Bucket=bucket_name
+                Bucket=s3_bucket_name
             )
 
         if simplify_response:
@@ -133,14 +134,14 @@ class AWSServicesManager:
                     for obj in response.get('Contents', [])
                 ]
             }
-        if print_response:
-            logger.info(f"S3 Bucket '{bucket_name}' response: {response}")
+        if verbose:
+            logger.info(f"S3 Bucket '{s3_bucket_name}' response: {response}")
 
         return response
 
     def upload_file_to_s3(
             self,
-            bucket_name: str,
+            s3_bucket_name: str,
             local_filepath: Union[str, Path],
             s3_filepath: Optional[str] = None,
             verbose: bool = False
@@ -149,7 +150,7 @@ class AWSServicesManager:
         Uploads a file to the specified S3 bucket.
 
         Args:
-            bucket_name (str)
+            s3_bucket_name (str)
                 The name of the S3 bucket to upload the file to.
             local_filepath (Union[str, Path])
                 The path to the file to upload.
@@ -163,18 +164,18 @@ class AWSServicesManager:
 
         self.client.upload_file(
             Filename=local_filepath,
-            Bucket=bucket_name,
+            Bucket=s3_bucket_name,
             Key=s3_filepath or os.path.basename(local_filepath)
         )
 
         if verbose:
             logger.success(
-                f"File '{local_filepath}' uploaded to S3 bucket '{bucket_name}' successfully."
+                f"File '{local_filepath}' uploaded to S3 bucket '{s3_bucket_name}' successfully."
             )
 
     def upload_directory_to_s3(
             self,
-            bucket_name: str,
+            s3_bucket_name: str,
             local_directory: Union[str, Path],
             s3_directory: Optional[str] = None
     ) -> None:
@@ -185,7 +186,7 @@ class AWSServicesManager:
         Uploaded files to s3 retain their relative paths.
 
         Args:
-            bucket_name (str)
+            s3_bucket_name (str)
                 The name of the S3 bucket to upload files to.
             local_directory (Union[str, Path])
                 The path to the local directory to upload.
@@ -211,17 +212,17 @@ class AWSServicesManager:
                     s3_filepath = local_filepath
 
                 self.upload_file_to_s3(
-                    bucket_name=bucket_name,
+                    s3_bucket_name=s3_bucket_name,
                     local_filepath=local_filepath,
                     s3_filepath=s3_filepath
                 )
         logger.success(
-            f"Directory '{local_directory}' uploaded to S3 bucket '{bucket_name}' successfully."
+            f"Directory '{local_directory}' uploaded to S3 bucket '{s3_bucket_name}' successfully."
         )
 
     def download_file_from_s3(
             self,
-            bucket_name: str,
+            s3_bucket_name: str,
             s3_filepath: str,
             local_filepath: str,
             verbose: bool = False
@@ -230,7 +231,7 @@ class AWSServicesManager:
         Downloads a file from the specified S3 bucket and file location to a local path.
 
         Args:
-            bucket_name (str)
+            s3_bucket_name (str)
                 The name of the S3 bucket to download the file from.
             s3_filepath (str)
                 The S3 file path of the file to download.
@@ -242,19 +243,19 @@ class AWSServicesManager:
         self._validate_service(required_service='s3')
 
         self.client.download_file(
-            Bucket=bucket_name,
+            Bucket=s3_bucket_name,
             Key=s3_filepath,
             Filename=local_filepath
         )
         if verbose:
             logger.success(
-                f"File '{s3_filepath}' downloaded from S3 bucket '{bucket_name}' "
+                f"File '{s3_filepath}' downloaded from S3 bucket '{s3_bucket_name}' "
                 f"to '{local_filepath}' successfully."
             )
 
     def download_directory_from_s3(
             self,
-            bucket_name: str,
+            s3_bucket_name: str,
             s3_prefix: str,
             local_directory: Union[str, Path]
     ) -> None:
@@ -264,7 +265,7 @@ class AWSServicesManager:
         with the given prefix and downloads them while retaining their relative paths.
 
         Args:
-            bucket_name (str)
+            s3_bucket_name (str)
                 The name of the S3 bucket to download files from.
             s3_directory (str)
                 The S3 directory path to download files from within the bucket.
@@ -274,18 +275,18 @@ class AWSServicesManager:
         self._validate_service(required_service='s3')
 
         paginator = self.client.get_paginator('list_objects_v2')
-        for page in paginator.paginate(Bucket=bucket_name, Prefix=s3_prefix):
+        for page in paginator.paginate(Bucket=s3_bucket_name, Prefix=s3_prefix):
             for obj in page.get('Contents', []):
                 s3_filepath = obj['Key']
                 relative_path = os.path.relpath(s3_filepath, s3_prefix)
                 local_filepath = os.path.join(local_directory, relative_path)
                 os.makedirs(os.path.dirname(local_filepath), exist_ok=True)
                 self.download_file_from_s3(
-                    bucket_name=bucket_name,
+                    s3_bucket_name=s3_bucket_name,
                     s3_filepath=s3_filepath,
                     local_filepath=local_filepath
                 )
         logger.success(
-            f"Directory '{s3_prefix}' downloaded from S3 bucket '{bucket_name}' "
+            f"Directory '{s3_prefix}' downloaded from S3 bucket '{s3_bucket_name}' "
             f"to '{local_directory}' successfully."
         )

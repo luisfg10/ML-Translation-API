@@ -10,9 +10,7 @@ from optimum.onnxruntime import ORTModelForSeq2SeqLM
 from settings.config import (
     AVAILABLE_TRANSLATIONS,
     AVAILABLE_MODEL_STORAGE_MODES,
-    LOCAL_MODEL_DIR,
-    STARTUP_MODEL_LOADING_LIMIT,
-    OVERWRITE_EXISTING_MODELS
+    LOCAL_MODEL_DIR
 )
 from models.aws import AWSServicesManager
 
@@ -33,7 +31,7 @@ class TranslationModelManager(AWSServicesManager):
             self,
             model_mappings: Dict[str, str],
             model_storage_mode: str,
-            overwrite_existing_models: bool = OVERWRITE_EXISTING_MODELS
+            overwrite_existing_models: bool = False
     ) -> None:
         '''
         Initialize the ModelManager class.
@@ -209,7 +207,7 @@ class TranslationModelManager(AWSServicesManager):
     def _download_model_from_s3(
             self,
             translation_pair: str,
-            bucket_name: str
+            s3_bucket_name: str
     ) -> None:
         '''
         Downloads a model from the specified S3 bucket to the local model directory.
@@ -220,7 +218,7 @@ class TranslationModelManager(AWSServicesManager):
         Args:
             translation_pair: str
                 The translation pair to download (e.g., 'en-fr', 'en-es').
-            bucket_name: str
+            s3_bucket_name: str
                 The name of the S3 bucket to download the model from.
         '''
         # check if directory already exists locally
@@ -236,10 +234,10 @@ class TranslationModelManager(AWSServicesManager):
 
         logger.info(
             f"Downloading model for translation pair '{translation_pair}' "
-            f"from S3 bucket '{bucket_name}'. This may take a few minutes..."
+            f"from S3 bucket '{s3_bucket_name}'. This may take a few minutes..."
         )
         self.download_directory_from_s3(
-            bucket_name=bucket_name,
+            s3_bucket_name=s3_bucket_name,
             s3_prefix=expected_model_dir.name,
             local_directory=expected_model_dir.name
         )
@@ -247,7 +245,7 @@ class TranslationModelManager(AWSServicesManager):
     def save_model(
             self,
             translation_pair: str,
-            bucket_name: Optional[str] = None
+            s3_bucket_name: Optional[str] = None
     ) -> None:
         '''
         Router method to upload/save a model based on the specified upload mode saved
@@ -260,7 +258,7 @@ class TranslationModelManager(AWSServicesManager):
         Args:
             translation_pair: str
                 The translation pair to upload (e.g., 'en-fr', 'en-es').
-            bucket_name: Optional[str]
+            s3_bucket_name: Optional[str]
                 The name of the S3 bucket to upload the model to.
                 Required if self.model_storage_mode is 's3'.
         '''
@@ -278,21 +276,21 @@ class TranslationModelManager(AWSServicesManager):
                 "Uploading model to S3, this action may take a few minutes..."
             )
             self.upload_directory_to_s3(
-                bucket_name=bucket_name,
+                s3_bucket_name=s3_bucket_name,
                 local_directory=directory_to_upload
             )
 
     def load_api_models(
             self,
-            bucket_name: Optional[str] = None,
-            model_limit: Optional[int] = STARTUP_MODEL_LOADING_LIMIT
+            s3_bucket_name: Optional[str] = None,
+            model_limit: Optional[int] = 2
     ) -> None:
         '''
         Executes logic to load all available models from AVAILABLE_TRANSLATIONS
         following the specified model storage mode.
 
         Args:
-            bucket_name: Optional[str]
+            s3_bucket_name: Optional[str]
                 The name of the S3 bucket to download models from.
                 Required if self.model_storage_mode is 's3'.
             model_limit: Optional[int]
@@ -304,7 +302,7 @@ class TranslationModelManager(AWSServicesManager):
             elif self.model_storage_mode == 's3':
                 self._download_model_from_s3(
                     translation_pair=translation_pair,
-                    bucket_name=bucket_name
+                    s3_bucket_name=s3_bucket_name
                 )
 
     def get_models_info(
