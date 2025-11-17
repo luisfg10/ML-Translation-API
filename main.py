@@ -45,6 +45,61 @@ def list_aws_s3_bucket_contents(
     logger.debug(f"S3 Bucket '{bucket_name}' contents: \n{response}")
 
 
+@cli.command()
+@click.option("--bucket-name", type=str, required=True)
+def test_aws_s3_file_upload(
+        bucket_name: str
+) -> None:
+    '''
+    Uploads a .txt with the text "Hello, World!" to the specified S3 bucket.
+
+    Args:
+        bucket_name (str)
+            The name of the S3 bucket to upload the file to.
+    '''
+    aws_manager = AWSServicesManager(service='s3')
+
+    # create test file
+    test_filename = "test.txt"
+    with open(test_filename, 'w') as f:
+        f.write("Hello, World!")
+
+    # upload test file to S3 bucket
+    aws_manager.upload_file_to_s3(
+        bucket_name=bucket_name,
+        local_filepath=test_filename,
+        s3_filepath=test_filename,
+        verbose=True
+    )
+
+
+@cli.command()
+@click.option("--bucket-name", type=str, required=True)
+@click.option("--s3-filepath", type=str, required=True)
+def test_aws_s3_file_download(
+        bucket_name: str,
+        s3_filepath: str
+) -> None:
+    '''
+    Downloads a file from the specified S3 bucket.
+
+    Args:
+        bucket_name (str)
+            The name of the S3 bucket to download the file from.
+        s3_filepath (str)
+            The S3 file path of the file to download.
+        local_filepath (str)
+            The local path where the file will be saved.
+    '''
+    aws_manager = AWSServicesManager(service='s3')
+    aws_manager.download_file_from_s3(
+        bucket_name=bucket_name,
+        s3_filepath=s3_filepath,
+        local_filepath=s3_filepath,
+        verbose=True
+    )
+
+
 # ---------------------------------------------------------------------
 # Model-related CLI commands
 
@@ -56,7 +111,7 @@ def list_aws_s3_bucket_contents(
     required=True
 )
 @click.option("--bucket-name", type=str, required=False)
-def upload_model(
+def save_model(
     translation_pair: str,
     model_storage_mode: str,
     bucket_name: Optional[str] = None
@@ -82,7 +137,7 @@ def upload_model(
         model_mappings=model_mappings,
         model_storage_mode=model_storage_mode,
     )
-    model_manager.upload_model(
+    model_manager.save_model(
         translation_pair=translation_pair,
         bucket_name=bucket_name
     )

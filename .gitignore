@@ -6,6 +6,7 @@ models/downloads/*
 
 # specific files
 .env
+test.txt
 
 # specific file types
 .DS_Store

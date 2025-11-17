@@ -120,11 +120,8 @@ On a development setting, it's desirable to modify and test out different parts 
     # Run the API server manually
     make run_api_on_server
     
-    # Test model predictions
+    # Test model predictions and other commands
     make test_model_prediction
-    
-    # Upload models
-    make upload_model
     ```
 
 ## Upcoming features

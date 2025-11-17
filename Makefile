@@ -25,7 +25,16 @@ list_aws_s3_bucket_contents:
 	$(PYTHON_INTERPRETER) $(APP) list-aws-s3-bucket-contents \
 		--bucket-name $(bucket-name)
 
-upload_model:
+test_aws_s3_file_upload:
+	$(PYTHON_INTERPRETER) $(APP) test-aws-s3-file-upload \
+		--bucket-name $(bucket-name) \
+
+test_aws_s3_file_download:
+	$(PYTHON_INTERPRETER) $(APP) test-aws-s3-file-download \
+		--bucket-name $(bucket-name) \
+		--s3-filepath $(download_test_file)
+
+save_model:
 	$(PYTHON_INTERPRETER) $(APP) upload-model \
 		--translation-pair $(translation-pair) \
 		--model-storage-mode $(model-storage-mode) \

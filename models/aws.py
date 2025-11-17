@@ -1,7 +1,8 @@
 from loguru import logger
 import os
 import boto3
-from typing import Optional
+from typing import Optional, Union
+from pathlib import Path
 from dotenv import load_dotenv
 
 # Load .env file from parent directory
@@ -60,6 +61,19 @@ class AWSServicesManager:
         )
         logger.info(f"AWS {self.service} client initialized successfully.")
 
+    def _validate_service(
+            self,
+            required_service: str
+    ) -> None:
+        '''
+        Validates that the class instance can perform a given operation
+        by checking the service type. Raises an error if the service does not match.
+        '''
+        if self.service != required_service:
+            raise ValueError(
+                f"Service is not {required_service}. Cannot perform this operation."
+            )
+
     def create_s3_bucket(
             self,
             bucket_name: str,
@@ -71,9 +85,7 @@ class AWSServicesManager:
             bucket_name (str)
                 The name of the S3 bucket to create.
         '''
-        if self.service != 's3':
-            logger.error("Service is not S3. Cannot create S3 bucket.")
-            return
+        self._validate_service(required_service='s3')
 
         self.client.create_bucket(
             Bucket=bucket_name
@@ -83,6 +95,7 @@ class AWSServicesManager:
     def list_s3_bucket_contents(
             self,
             bucket_name: str,
+            bucket_prefix: Optional[str] = None,
             simplify_response: bool = True,
             print_response: bool = False
     ) -> None:
@@ -92,19 +105,27 @@ class AWSServicesManager:
         Args:
             bucket_name (str)
                 The name of the S3 bucket to list contents from.
+            bucket_prefix (str, optional)
+                The prefix to filter objects in the bucket. Defaults to None.
+                use this to list objects within a specific "folder" in the bucket.
             simplify_response (bool, optional)
                 Whether to simplify the response to only include object keys and sizes.
                 Defaults to True.
             print_response (bool, optional)
                 Whether to print the full response. Defaults to False.
         '''
-        if self.service != 's3':
-            logger.error("Service is not S3. Cannot list S3 bucket contents.")
-            return
+        self._validate_service(required_service='s3')
 
-        response = self.client.list_objects_v2(
-            Bucket=bucket_name
-        )
+        if bucket_prefix:
+            response = self.client.list_objects_v2(
+                Bucket=bucket_name,
+                Prefix=bucket_prefix
+            )
+        else:
+            response = self.client.list_objects_v2(
+                Bucket=bucket_name
+            )
+
         if simplify_response:
             response = {
                 'Contents': [
@@ -113,15 +134,16 @@ class AWSServicesManager:
                 ]
             }
         if print_response:
-            logger.info(f"S3 Bucket '{bucket_name}' Contents: {response}")
+            logger.info(f"S3 Bucket '{bucket_name}' response: {response}")
 
         return response
 
     def upload_file_to_s3(
             self,
             bucket_name: str,
-            local_filepath: str,
-            s3_filepath: Optional[str] = None
+            local_filepath: Union[str, Path],
+            s3_filepath: Optional[str] = None,
+            verbose: bool = False
     ) -> None:
         '''
         Uploads a file to the specified S3 bucket.
@@ -129,56 +151,65 @@ class AWSServicesManager:
         Args:
             bucket_name (str)
                 The name of the S3 bucket to upload the file to.
-            local_filepath (str)
+            local_filepath (Union[str, Path])
                 The path to the file to upload.
             s3_filepath (str, optional)
                 The S3 file path where the file will be uploaded.
                 If not provided, uses the local file name.
+            verbose (bool, optional)
+                Whether to log verbose output. Defaults to False.
         '''
-        if self.service != 's3':
-            logger.error("Service is not S3. Cannot upload file to S3.")
-            return
+        self._validate_service(required_service='s3')
 
         self.client.upload_file(
             Filename=local_filepath,
             Bucket=bucket_name,
             Key=s3_filepath or os.path.basename(local_filepath)
         )
-        logger.success(
-            f"File '{local_filepath}' uploaded to S3 bucket '{bucket_name}' successfully."
-        )
+
+        if verbose:
+            logger.success(
+                f"File '{local_filepath}' uploaded to S3 bucket '{bucket_name}' successfully."
+            )
 
     def upload_directory_to_s3(
             self,
             bucket_name: str,
-            local_directory: str,
+            local_directory: Union[str, Path],
             s3_directory: Optional[str] = None
     ) -> None:
         '''
         Uploads all files from a local directory to the specified S3 bucket.
+        S3 doesn't support directories natively, so in order to upload a directory
+        each file is uploaded individually within the same sub-directory structure.
         Uploaded files to s3 retain their relative paths.
 
         Args:
             bucket_name (str)
                 The name of the S3 bucket to upload files to.
-            local_directory (str)
+            local_directory (Union[str, Path])
                 The path to the local directory to upload.
             s3_directory (str, optional)
-                The S3 directory path where files will be uploaded.
-                If not provided, uses the local directory name.
+                Custom S3 directory path where files will be uploaded.
+                If not provided, uses the local directory's default path.
         '''
-        if self.service != 's3':
-            logger.error("Service is not S3. Cannot upload directory to S3.")
-            return
+        self._validate_service(required_service='s3')
 
         for root, _, files in os.walk(local_directory):
             for file in files:
                 local_filepath = os.path.join(root, file)
-                relative_path = os.path.relpath(local_filepath, local_directory)
-                s3_filepath = os.path.join(
-                    s3_directory or os.path.basename(local_directory),
-                    relative_path
-                )
+                if s3_directory:
+                    filename = os.path.relpath(
+                        local_filepath,
+                        local_directory
+                    )
+                    s3_filepath = os.path.join(
+                        s3_directory,
+                        filename
+                    )
+                else:
+                    s3_filepath = local_filepath
+
                 self.upload_file_to_s3(
                     bucket_name=bucket_name,
                     local_filepath=local_filepath,
@@ -186,4 +217,75 @@ class AWSServicesManager:
                 )
         logger.success(
             f"Directory '{local_directory}' uploaded to S3 bucket '{bucket_name}' successfully."
+        )
+
+    def download_file_from_s3(
+            self,
+            bucket_name: str,
+            s3_filepath: str,
+            local_filepath: str,
+            verbose: bool = False
+    ) -> None:
+        '''
+        Downloads a file from the specified S3 bucket and file location to a local path.
+
+        Args:
+            bucket_name (str)
+                The name of the S3 bucket to download the file from.
+            s3_filepath (str)
+                The S3 file path of the file to download.
+            local_filepath (str)
+                The local path where the file will be saved.
+            verbose (bool, optional)
+                Whether to log verbose output. Defaults to False.
+        '''
+        self._validate_service(required_service='s3')
+
+        self.client.download_file(
+            Bucket=bucket_name,
+            Key=s3_filepath,
+            Filename=local_filepath
+        )
+        if verbose:
+            logger.success(
+                f"File '{s3_filepath}' downloaded from S3 bucket '{bucket_name}' "
+                f"to '{local_filepath}' successfully."
+            )
+
+    def download_directory_from_s3(
+            self,
+            bucket_name: str,
+            s3_prefix: str,
+            local_directory: Union[str, Path]
+    ) -> None:
+        '''
+        Downloads all files from a specified S3 directory to a local directory.
+        S3 doesn't support directories natively, so this function lists all objects
+        with the given prefix and downloads them while retaining their relative paths.
+
+        Args:
+            bucket_name (str)
+                The name of the S3 bucket to download files from.
+            s3_directory (str)
+                The S3 directory path to download files from within the bucket.
+            local_directory (Union[str, Path])
+                The local directory where files will be saved.
+        '''
+        self._validate_service(required_service='s3')
+
+        paginator = self.client.get_paginator('list_objects_v2')
+        for page in paginator.paginate(Bucket=bucket_name, Prefix=s3_prefix):
+            for obj in page.get('Contents', []):
+                s3_filepath = obj['Key']
+                relative_path = os.path.relpath(s3_filepath, s3_prefix)
+                local_filepath = os.path.join(local_directory, relative_path)
+                os.makedirs(os.path.dirname(local_filepath), exist_ok=True)
+                self.download_file_from_s3(
+                    bucket_name=bucket_name,
+                    s3_filepath=s3_filepath,
+                    local_filepath=local_filepath
+                )
+        logger.success(
+            f"Directory '{s3_prefix}' downloaded from S3 bucket '{bucket_name}' "
+            f"to '{local_directory}' successfully."
         )
