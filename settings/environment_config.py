@@ -10,7 +10,7 @@ from settings.config import (
 )
 
 # Load .env file from parent directory
-dotenv_path = os.path.join(os.getcwd(), '.env')
+dotenv_path = os.path.join(os.getcwd(), 'settings/.env')
 load_dotenv(dotenv_path, override=True)
 
 
