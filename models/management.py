@@ -6,17 +6,16 @@ from pathlib import Path
 from transformers import AutoTokenizer
 from optimum.onnxruntime import ORTModelForSeq2SeqLM
 
-# Local code imports
+# Local imports
 from settings.config import (
     AVAILABLE_TRANSLATIONS,
     AVAILABLE_MODEL_STORAGE_MODES,
-    LOCAL_MODEL_DIR,
-    STARTUP_MODEL_LOADING_LIMIT,
-    OVERWRITE_EXISTING_MODELS
+    LOCAL_MODEL_DIR
 )
+from models.aws import AWSServicesManager
 
 
-class TranslationModelManager:
+class TranslationModelManager(AWSServicesManager):
     '''
     Helper class for managing interactions with the ML models in the project,
     including:
@@ -25,11 +24,14 @@ class TranslationModelManager:
         - uploading models to S3
         - downloading models from S3
         - loading models and conducting inference
+
+    Inherits from AWSServicesManager to handle AWS S3 interactions.
     '''
     def __init__(
             self,
             model_mappings: Dict[str, str],
-            model_storage_mode: str
+            model_storage_mode: str,
+            overwrite_existing_models: bool = False
     ) -> None:
         '''
         Initialize the ModelManager class.
@@ -42,6 +44,9 @@ class TranslationModelManager:
             model_storage_mode: str
                 The mode of model storage, either 's3' or 'local'.
                 This parameter informs how models will be saved and loaded.
+            overwrite_existing_models: bool
+                Whether to overwrite existing local model files when doing download
+                operations if such files already exist locally.
         '''
         # check inputs
         if (
@@ -61,6 +66,7 @@ class TranslationModelManager:
             )
 
         # save values to self
+        self.overwrite_existing_models = overwrite_existing_models
         self.model_mappings = {
             k.lower(): v for k, v in model_mappings.items()
             if isinstance(k, str)
@@ -78,6 +84,10 @@ class TranslationModelManager:
             "and translation pairs: "
             f"{list(self.model_mappings.keys())}"
         )
+
+        # init parent class
+        if self.model_storage_mode == 's3':
+            super().__init__(service='s3', init_client=True)
 
     def _resolve_model_from_translation_pair(
             self,
@@ -109,10 +119,9 @@ class TranslationModelManager:
             )
         return self.model_mappings[translation_pair]
 
-    def _download_model_locally(
+    def _download_model_from_hugging_face(
             self,
-            translation_pair: str,
-            overwrite_if_exists: bool = OVERWRITE_EXISTING_MODELS
+            translation_pair: str
     ) -> None:
         '''
         Fetches a model and its tokenizer from the Hugging Face hub and saves it locally
@@ -136,9 +145,6 @@ class TranslationModelManager:
         Args:
             translation_pair: str
                 The translation pair to download (e.g., 'en-fr', 'en-es').
-            overwrite_if_exists: bool
-                Whether to overwrite existing local model files if they already exist.
-                If False, skips download if files are found locally.
         '''
         # get model name from translation pair
         try:
@@ -151,12 +157,12 @@ class TranslationModelManager:
 
         # check if directory already exists locally
         expected_model_dir = Path(LOCAL_MODEL_DIR) / translation_pair
-        if not overwrite_if_exists and expected_model_dir.exists():
-            logger.success(
+        if not self.overwrite_existing_models and expected_model_dir.exists():
+            logger.debug(
                 f"Model for translation pair '{translation_pair}' "
                 f"already exists locally at {expected_model_dir}, "
                 "so download is skipped. To alter this behavior, set "
-                f"'overwrite_if_exists=True'."
+                f"'overwrite_existing_models=True' when creating the ModelManager instance."
             )
             return
 
@@ -198,81 +204,93 @@ class TranslationModelManager:
             )
             return
 
-    def _upload_model_to_s3(
-            self,
-            translation_pair: str,
-            delete_local_after_upload: bool = False
-    ) -> None:
-        '''
-        Fetches a directory with the 'translation_pair' name in LOCAL_MODEL_DIR
-        and uploads it to AWS S3, if it exists.
-
-        Args:
-            translation_pair: str
-                The translation pair to upload (e.g., 'en-fr', 'en-es').
-            delete_local_after_upload: bool
-                Whether to delete the local model files after uploading to S3.
-        '''
-        raise NotImplementedError(
-            "S3 upload functionality is not yet implemented."
-        )
-
     def _download_model_from_s3(
             self,
             translation_pair: str,
-            bucket_name: str
+            s3_bucket_name: str
     ) -> None:
         '''
-        Downloads a model from AWS S3 and saves it locally. Expects the directory within
-        the bucket to follow the format '{LOCAL_MODEL_DIR}/{translation_pair}', and downloads
-        locally using the same naming convention.
+        Downloads a model from the specified S3 bucket to the local model directory.
+        Expects the models to be stored in exactly the same directory structure as
+        that used for local downloads:
+            '{LOCAL_MODEL_DIR}/{translation_pair}/'
 
         Args:
             translation_pair: str
                 The translation pair to download (e.g., 'en-fr', 'en-es').
-            bucket_name: str
+            s3_bucket_name: str
                 The name of the S3 bucket to download the model from.
         '''
-        raise NotImplementedError(
-            "S3 download functionality is not yet implemented."
+        # check if directory already exists locally
+        expected_model_dir = Path(LOCAL_MODEL_DIR) / translation_pair
+        if not self.overwrite_existing_models and expected_model_dir.exists():
+            logger.debug(
+                f"Model for translation pair '{translation_pair}' "
+                f"already exists locally at {expected_model_dir}, "
+                "so download is skipped. To alter this behavior, set "
+                f"'overwrite_if_exists=True' when calling this method."
+            )
+            return
+
+        logger.info(
+            f"Downloading model for translation pair '{translation_pair}' "
+            f"from S3 bucket '{s3_bucket_name}'. This may take a few minutes..."
+        )
+        self.download_directory_from_s3(
+            s3_bucket_name=s3_bucket_name,
+            s3_prefix=expected_model_dir,
+            local_directory=expected_model_dir
         )
 
-    def upload_model(
+    def save_model(
             self,
             translation_pair: str,
-            bucket_name: Optional[str] = None
+            s3_bucket_name: Optional[str] = None
     ) -> None:
         '''
         Router method to upload/save a model based on the specified upload mode saved
         to the ModelManager instance.
+        Local saving involves downlaoding the model from Hugging Face and saving it
+        locally in ONNX format.
+        S3 uploading involves downloading the model from Hugging Face locally first,
+        then uploading the local files to the specified S3 bucket.
 
         Args:
             translation_pair: str
                 The translation pair to upload (e.g., 'en-fr', 'en-es').
-            bucket_name: Optional[str]
+            s3_bucket_name: Optional[str]
                 The name of the S3 bucket to upload the model to.
                 Required if self.model_storage_mode is 's3'.
         '''
-        self._download_model_locally(translation_pair=translation_pair)
+        self._download_model_from_hugging_face(translation_pair=translation_pair)
 
         if self.model_storage_mode == 's3':
-            if not bucket_name:
-                raise ValueError(
-                    "bucket_name must be provided for 's3' model storage mode."
+            # get directory name
+            directory_to_upload = Path(LOCAL_MODEL_DIR) / translation_pair
+            if not directory_to_upload.exists():
+                raise FileNotFoundError(
+                    f"Local model directory '{directory_to_upload}' does not exist. "
+                    "Cannot upload to S3."
                 )
-            self._upload_model_to_s3(translation_pair=translation_pair)
+            logger.debug(
+                "Uploading model to S3, this action may take a few minutes..."
+            )
+            self.upload_directory_to_s3(
+                s3_bucket_name=s3_bucket_name,
+                local_directory=directory_to_upload
+            )
 
     def load_api_models(
             self,
-            bucket_name: Optional[str] = None,
-            model_limit: Optional[int] = STARTUP_MODEL_LOADING_LIMIT
+            s3_bucket_name: Optional[str] = None,
+            model_limit: Optional[int] = 2
     ) -> None:
         '''
         Executes logic to load all available models from AVAILABLE_TRANSLATIONS
         following the specified model storage mode.
 
         Args:
-            bucket_name: Optional[str]
+            s3_bucket_name: Optional[str]
                 The name of the S3 bucket to download models from.
                 Required if self.model_storage_mode is 's3'.
             model_limit: Optional[int]
@@ -280,11 +298,11 @@ class TranslationModelManager:
         '''
         for translation_pair in AVAILABLE_TRANSLATIONS[:model_limit]:
             if self.model_storage_mode == 'local':
-                self._download_model_locally(translation_pair=translation_pair)
+                self._download_model_from_hugging_face(translation_pair=translation_pair)
             elif self.model_storage_mode == 's3':
                 self._download_model_from_s3(
                     translation_pair=translation_pair,
-                    bucket_name=bucket_name
+                    s3_bucket_name=s3_bucket_name
                 )
 
     def get_models_info(
@@ -393,14 +411,14 @@ class TranslationModelManager:
             if raise_on_missing_model:
                 raise FileNotFoundError(
                     f"Model for translation pair '{translation_pair}' not found at '{model_dir}'. "
-                    "Please download the model first using the 'upload_model()' method."
+                    "Please download the model first using the 'save_model()' method."
                 )
             else:
                 logger.warning(
                     f"Model for translation pair '{translation_pair}' not found locally. "
                     "Attempting to download..."
                 )
-                self._download_model_locally(translation_pair=translation_pair)
+                self._download_model_from_hugging_face(translation_pair=translation_pair)
 
                 # Check again after download attempt
                 if not model_dir.exists():

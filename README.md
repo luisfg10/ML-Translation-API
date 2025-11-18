@@ -1,8 +1,8 @@
 # ML Translation API
 
-This project uses translation ML models from the HuggingFace `Transformers` library and serves them as a lightweight API service using `FastAPI` as the web framework on a `uvicorn` server and `optimum.onnxruntime` for model inference optimization. 
+This project uses translation ML models from the HuggingFace `Transformers` library and serves them as a lightweight API service using `FastAPI` as the web framework on a `uvicorn` server and `optimum.onnxruntime` for model inference optimization. It offers an optional capability to store and retrieve the ML models using `AWS S3`.
 
-For comparison, this project is able to run the API on a ~4GB Docker container, while projects using frameworks like `torch` can take ~15GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
+For comparison, this project is able to run the API on a ~5GB Docker container, while projects using frameworks like `torch` can take ~15GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
 
 ## Index
 * [Repository Structure](#repository-structure)
@@ -24,13 +24,16 @@ ML-Translation-API/
 │   ├── postman_collection.json         
 │   └── api_exploration.ipynb
 ├── models/                     # Model management and utilities
-│   ├── management.py           
+│   ├── management.py 
+│   ├── aws.py           
 │   └── downloads/              # Downloaded translation models
 │       ├── en-es/              
 │       ├── en-fr/              
 │       └── ...                 
 ├── settings/                   # Configuration and settings
-│   ├── config.py               
+│   ├── config.py  
+│   ├── environment_config.py        
+│   ├── .env.template              
 │   ├── language_mappings.json  
 │   └── model_mappings.json     
 ├── main.py                     # Definition of the main executables + adequation into CLI commands
@@ -38,22 +41,48 @@ ML-Translation-API/
 ├── Dockerfile                  # Production Dockerfile
 ├── Dockerfile-dev              # Development Dockerfile
 ├── .dockerignore               # Files and directories to ignore in Docker builds
+├── .gitignore
+├── CHANGELOG.md                # Document significant changes across project versions
 ├── Makefile                    # Build and development commands
 └── README.md               
 ```
 ### `settings/` directory
-This directory contains the required configuration files for the application.
-* `config.py`: Contains the main configuration settings for the API, including the available translation pairs, the available means of uploading/downloading models, and the directory within the project where the models are stored.
+This directory contains the required configuration files for running the application.
+* `config.py`: Contains the main configuration settings for the API, including the available translation pairs, the available means of uploading/downloading models, the directory within the project where the models are stored, etc.
+* `environment_config.py`: Manages the loading of environment variables detaling more specific API/model behavior from a `.env` file, which is also expected to be in the **settings/** directory. See the `.env.template` file for reference on how to create your own `.env` file.
 * `language_mappings.json`: A JSON file that maps language codes to their full names (e.g., "en" to "English").
 * `model_mappings.json`: A JSON file that maps translation pairs to their corresponding HuggingFace model names.
 
 ### `Makefile` and `main.py`
-The `Makefile` contains several CLI targets to facilitate development and testing of the application. These commands come from the `main.py` file, and are also explained there.
+The `Makefile` contains several CLI targets to facilitate development and testing of the application, as well as the main command to run the API on a `uvicorn` server. These commands come from the `main.py` file, and are explained there in more detail.
 
 ### `exp/` directory
-This directory contains useful material for understanding and exploring the API's capabilities and behavior, including a Jupyter notebook and a Postman collection.
+This directory contains useful material for understanding and exploring the API's capabilities and behavior, including a Jupyter notebook and a Postman collection with examples. Both resources are complementary to better understand how to interact with the API.
 
 ## Environment variables and API configuration
+Below is an explanation of the environment variables used in this project:
+
+### Testing Variables
+* `TEST_TRANSLATION_PAIR`: Specifies the default language pair used for testing translations (e.g., "en-fr" for English to French).
+* `TEST_TEXT`: The default text used for testing the translation functionality (e.g., "Hello, world!").
+* `TEST_FILE_DOWNLOAD_PATH`: The file path for running AWS S3 upload/download tests.
+
+### Model Variables
+* `MODEL_STORAGE_MODE`: Determines where the models are stored/uploaded. It can be set to either **local** (models are stored locally in the project directory) or **s3** (models are stored in an AWS S3 bucket).
+* `S3_BUCKET_NAME`: The name of the AWS S3 bucket used for storing models when `MODEL_STORAGE_MODE` is set to **s3**.
+
+### API Variables
+* `API_HOST`: The host address for the API server (default is **0.0.0.0**).
+* `API_PORT`: The port number on which the API server listens (default is **8000**).
+* `API_LOG_LEVEL`: The logging level for the API server (e.g., **debug**, **info**, **warning**, **error**).
+
+### Credentials/Secrets
+The credentials required for accessing AWS S3 services. These should be set as environment variables and not hardcoded in the codebase for security reasons.
+* `AWS_ACCESS_KEY_ID`: The AWS access key ID for accessing S3 services.
+* `AWS_SECRET_ACCESS_KEY`: The AWS secret access key for accessing S3 services.
+* `AWS_REGION`: The AWS region where the S3 bucket is located.
+
+**Note**: The AWS S3 is an optional, non-essential feature of the project. The API will still work fine if using local model storage.
 
 ## How to run locally  
 It's advised to run the project in a Docker container for ease of deployment and consistency across different environments. Alternatively, it can be run using other options like virtual environments, but this is not covered in this README.
@@ -69,6 +98,7 @@ It's advised to run the project in a Docker container for ease of deployment and
    ```bash
    cd ML-Translation-API
    ```
+4. Create a `.env` file in the `settings/` directory based on the provided `.env.template` file. Fill in the necessary environment variables depending on your use case. From the terminal, this may be done with the commands:
 
 ### Production Setup
 The production version of the project goes straight to business and runs the API server automatically as a command when the container starts.
@@ -120,20 +150,17 @@ On a development setting, it's desirable to modify and test out different parts 
     # Run the API server manually
     make run_api_on_server
     
-    # Test model predictions
+    # Test model predictions and other commands
     make test_model_prediction
-    
-    # Upload models
-    make upload_model
     ```
 
 ## Upcoming features
-* Add the option of loading/downloading models to/from `AWS S3` buckets to have a single source to pull the models from and improve API consistency.  
 * Add unit tests using `pytest` to validate application functionality and ensure code quality.  
 * Add the option of producing confidence lightweight scores for the `predict/` endpoint of the API so users can assess the reliability of the translations without bloating image size with packages like `torch`.
 * Add open-source telemetry collection to keep track of API usage and performance metrics, like response times and error rates. 
 * Add a module for model fine-tuning with custom datasets to allow users to adapt translation models to specific domains or languages, simulating a real-world scenario.  
 * Use `nginx` in addition to a `docker-compose.yml` to scale and manage the API service using several containers.
+* Automate the process of deploying the Docker container to cloud services like AWS EC2 in order to expose the API to public consumption using `boto3`.
 
 
 ## Relevant Documentation
@@ -141,5 +168,6 @@ On a development setting, it's desirable to modify and test out different parts 
 * [HuggingFace Hub Translation models](https://huggingface.co/models?pipeline_tag=translation&sort=trending)
 * [ONNX](https://onnx.ai/)
 * [Optimum ONNX Runtime](https://huggingface.co/docs/optimum/v1.2.1/en/onnxruntime/modeling_ort)
+* [Boto3 (AWS SDK for Python)](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
 * [Flake8](https://flake8.pycqa.org/en/latest/user/configuration.html)
 * [Postman Docs](https://learning.postman.com/docs/introduction/overview/)
