@@ -165,9 +165,11 @@ On a development setting, it's desirable to modify and test out different parts 
 
 ## Relevant Documentation
 * [FastAPI](https://fastapi.tiangolo.com/tutorial/)
+* [Uvicorn](https://uvicorn.dev/)
 * [HuggingFace Hub Translation models](https://huggingface.co/models?pipeline_tag=translation&sort=trending)
 * [ONNX](https://onnx.ai/)
 * [Optimum ONNX Runtime](https://huggingface.co/docs/optimum/v1.2.1/en/onnxruntime/modeling_ort)
 * [Boto3 (AWS SDK for Python)](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
+* [Pytest](https://docs.pytest.org/en/stable/)
 * [Flake8](https://flake8.pycqa.org/en/latest/user/configuration.html)
 * [Postman Docs](https://learning.postman.com/docs/introduction/overview/)

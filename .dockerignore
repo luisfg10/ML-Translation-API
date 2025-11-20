@@ -1,5 +1,6 @@
 # directories
 exp/*
+tests/
 venv/*
 .vscode/
 __pycache__/

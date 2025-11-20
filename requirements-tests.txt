@@ -1,0 +1,12 @@
+boto3==1.40.74
+fastapi==0.118.0
+httpx==0.28.1
+loguru==0.7.3
+optimum[onnxruntime]==2.0.0
+pydantic==2.11.9
+pytest==9.0.1
+python-dotenv==1.2.1
+sacremoses==0.1.1
+sentencepiece==0.2.1
+transformers==4.55.4
+uvicorn==0.38.0

@@ -28,6 +28,11 @@ save_model:
 test_model_prediction:
 	$(PYTHON_INTERPRETER) $(APP) test-model-prediction
 
+# Pytest
+
+run_pytest:
+	$(PYTHON_INTERPRETER) -m pytest tests/
+
 
 # API Server
 

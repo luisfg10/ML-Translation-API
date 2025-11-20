@@ -13,7 +13,7 @@ class RootResponse(BaseModel):
     version: str = Field(..., description="Version of the API")
     description: str = Field(..., description="Description of the API")
 
-    class Config:
+    class ConfigDict:
         json_schema_extra = {
             "example": {
                 "name": "Translation API",
@@ -32,7 +32,7 @@ class HealthResponse(BaseModel):
     '''
     status: str = Field(..., description="Health status of the API")
 
-    class Config:
+    class ConfigDict:
         json_schema_extra = {
             "example": {
                 "status": "ok"
@@ -61,7 +61,7 @@ class ModelsResponse(BaseModel):
         description="Dictionary of available models metadata by translation pair"
     )
 
-    class Config:
+    class ConfigDict:
         json_schema_extra = {
             "example": {
                 "models": {
@@ -119,7 +119,7 @@ class PredictData(BaseModel):
         description="Whether to stop generation when all beams finish."
     )
 
-    class Config:
+    class ConfigDict:
         json_schema_extra = {
             "example": {
                 "source": "en",
@@ -143,7 +143,7 @@ class PredictRequest(BaseModel):
         max_length=100
     )
 
-    class Config:
+    class ConfigDict:
         json_schema_extra = {
             "example": {
                 "items": [
@@ -183,7 +183,7 @@ class SinglePredictResponse(BaseModel):
         description="Translated text corresponding to the input"
     )
 
-    class Config:
+    class ConfigDict:
         json_schema_extra = {
             "example": {
                 "position": 0,
@@ -201,7 +201,7 @@ class PredictResponse(BaseModel):
         description="List of translation results for each successful input item"
     )
 
-    class Config:
+    class ConfigDict:
         json_schema_extra = {
             "example": {
                 "results": [
