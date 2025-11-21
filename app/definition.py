@@ -67,7 +67,7 @@ def models(
     return_model_config: bool = Query(
         default=False,
         description="Include detailed model configuration metadata in the response.",
-        example=True
+        examples=True
     )
 ):
     '''

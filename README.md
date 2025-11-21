@@ -2,7 +2,7 @@
 
 This project uses translation ML models from the HuggingFace `Transformers` library and serves them as a lightweight API service using `FastAPI` as the web framework on a `uvicorn` server and `optimum.onnxruntime` for model inference optimization. It offers an optional capability to store and retrieve the ML models using `AWS S3`.
 
-For comparison, this project is able to run the API on a ~5GB Docker container, while projects using frameworks like `torch` can take ~15GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
+For comparison, this project is able to run the API on a ~1GB Docker container, while projects using frameworks like `torch` can take ~15GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
 
 ## Index
 * [Repository Structure](#repository-structure)
@@ -36,6 +36,10 @@ ML-Translation-API/
 │   ├── .env.template              
 │   ├── language_mappings.json  
 │   └── model_mappings.json     
+├── tests/                      # Test suite
+│   ├── test_basic_endpoints.py
+│   └── test_predict_endpoint.py
+│   
 ├── main.py                     # Definition of the main executables + adequation into CLI commands
 ├── requirements.txt            
 ├── Dockerfile                  # Production Dockerfile
@@ -58,6 +62,12 @@ The `Makefile` contains several CLI targets to facilitate development and testin
 
 ### `exp/` directory
 This directory contains useful material for understanding and exploring the API's capabilities and behavior, including a Jupyter notebook and a Postman collection with examples. Both resources are complementary to better understand how to interact with the API.
+
+### `tests/` directory
+This directory contains the test suite for the application, organized into subdirectories for testing different parts of the project:
+* `app/`: Contains tests for the application modules, including tests for basic API endpoints and the prediction endpoint.
+* `models/`: Contains tests related to model management and functionality.
+The tests can be run automatically using the `make run_pytest` command from the `Makefile` on the CLI.
 
 ## Environment variables and API configuration
 Below is an explanation of the environment variables used in this project:
@@ -155,19 +165,21 @@ On a development setting, it's desirable to modify and test out different parts 
     ```
 
 ## Upcoming features
-* Add unit tests using `pytest` to validate application functionality and ensure code quality.  
 * Add the option of producing confidence lightweight scores for the `predict/` endpoint of the API so users can assess the reliability of the translations without bloating image size with packages like `torch`.
 * Add open-source telemetry collection to keep track of API usage and performance metrics, like response times and error rates. 
 * Add a module for model fine-tuning with custom datasets to allow users to adapt translation models to specific domains or languages, simulating a real-world scenario.  
 * Use `nginx` in addition to a `docker-compose.yml` to scale and manage the API service using several containers.
+* Integrate CI/CD pipelines using GitHub Actions to automate running the `pytest` tests whenever a pull request is created.
 * Automate the process of deploying the Docker container to cloud services like AWS EC2 in order to expose the API to public consumption using `boto3`.
 
 
 ## Relevant Documentation
 * [FastAPI](https://fastapi.tiangolo.com/tutorial/)
+* [Uvicorn](https://uvicorn.dev/)
 * [HuggingFace Hub Translation models](https://huggingface.co/models?pipeline_tag=translation&sort=trending)
 * [ONNX](https://onnx.ai/)
 * [Optimum ONNX Runtime](https://huggingface.co/docs/optimum/v1.2.1/en/onnxruntime/modeling_ort)
 * [Boto3 (AWS SDK for Python)](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
+* [Pytest](https://docs.pytest.org/en/stable/)
 * [Flake8](https://flake8.pycqa.org/en/latest/user/configuration.html)
 * [Postman Docs](https://learning.postman.com/docs/introduction/overview/)
