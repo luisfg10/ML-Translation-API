@@ -2,7 +2,7 @@
 
 This project uses translation ML models from the HuggingFace `Transformers` library and serves them as a lightweight API service using `FastAPI` as the web framework on a `uvicorn` server and `optimum.onnxruntime` for model inference optimization. It offers an optional capability to store and retrieve the ML models using `AWS S3`.
 
-For comparison, this project is able to run the API on a ~5GB Docker container, while projects using frameworks like `torch` can take ~15GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
+For comparison, this project is able to run the API on a ~1GB Docker container, while projects using frameworks like `torch` can take ~15GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
 
 ## Index
 * [Repository Structure](#repository-structure)
@@ -37,9 +37,8 @@ ML-Translation-API/
 │   ├── language_mappings.json  
 │   └── model_mappings.json     
 ├── tests/                      # Test suite
-│   └── app/                    # Tests for application modules
-│       ├── test_basic_endpoints.py
-│       └── test_predict_endpoint.py
+│   ├── test_basic_endpoints.py
+│   └── test_predict_endpoint.py
 │   
 ├── main.py                     # Definition of the main executables + adequation into CLI commands
 ├── requirements.txt            

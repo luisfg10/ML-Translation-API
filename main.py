@@ -58,7 +58,7 @@ def list_aws_s3_bucket_contents(
     type=str,
     default=EnvironmentConfig.S3_BUCKET_NAME
 )
-def test_aws_s3_file_upload(
+def aws_s3_file_upload(
         s3_bucket_name: str
 ) -> None:
     '''
@@ -95,7 +95,7 @@ def test_aws_s3_file_upload(
     type=str,
     default=EnvironmentConfig.TEST_FILE_DOWNLOAD_PATH
 )
-def test_aws_s3_file_download(
+def aws_s3_file_download(
         s3_bucket_name: str,
         s3_filepath: str
 ) -> None:
@@ -130,7 +130,7 @@ def test_aws_s3_file_download(
     type=str,
     default=EnvironmentConfig.TEST_TRANSLATION_PAIR
 )
-def test_aws_s3_directory_download(
+def aws_s3_directory_download(
         s3_bucket_name: str,
         test_translation_pair: str = EnvironmentConfig.TEST_TRANSLATION_PAIR
 ) -> None:
@@ -187,7 +187,8 @@ def save_model(
     overwrite_existing_models: bool = False
 ) -> None:
     '''
-    Uploads/saves a translation model from the Transformers library to a specified location.
+    Uploads/saves a translation model from the Transformers
+    library to a specified location.
 
     Args:
         translation_pair: str
@@ -224,7 +225,7 @@ def save_model(
     type=str,
     default=EnvironmentConfig.TEST_TEXT
 )
-def test_model_prediction(
+def run_model_prediction(
         translation_pair: str,
         input_text: str
 ) -> None:
