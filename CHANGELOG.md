@@ -6,7 +6,7 @@ Added unit tests using `pytest` for:
 * all API endpoints under different scenarios  
 * major model-related methods   
 
-AWS functionalities ARE NOT covered as this is a secondary feature within the project.  This flow can be run manually from the CLI using `make run_tests`, as well as automatically whenever a pull Request is created via GitHub Actions.  
+AWS functionalities ARE NOT covered as this is a secondary feature within the project.  This flow can be run manually from the CLI using `make run_pytest`, and is also set up as a pre-push hook as a quality check before any code is pushed to the repository.
 This functionality is technically non-essential to running the API, so it is left outside of the `requirements.txt` file in the interest of keeping dependencies minimal. To run these tests locally, use either a virtual environment or add them to the project's Docker image.
 
 ## v0.0.2

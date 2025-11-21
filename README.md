@@ -36,6 +36,11 @@ ML-Translation-API/
 │   ├── .env.template              
 │   ├── language_mappings.json  
 │   └── model_mappings.json     
+├── tests/                      # Test suite
+│   └── app/                    # Tests for application modules
+│       ├── test_basic_endpoints.py
+│       └── test_predict_endpoint.py
+│   
 ├── main.py                     # Definition of the main executables + adequation into CLI commands
 ├── requirements.txt            
 ├── Dockerfile                  # Production Dockerfile
@@ -58,6 +63,12 @@ The `Makefile` contains several CLI targets to facilitate development and testin
 
 ### `exp/` directory
 This directory contains useful material for understanding and exploring the API's capabilities and behavior, including a Jupyter notebook and a Postman collection with examples. Both resources are complementary to better understand how to interact with the API.
+
+### `tests/` directory
+This directory contains the test suite for the application, organized into subdirectories for testing different parts of the project:
+* `app/`: Contains tests for the application modules, including tests for basic API endpoints and the prediction endpoint.
+* `models/`: Contains tests related to model management and functionality.
+The tests can be run automatically using the `make run_pytest` command from the `Makefile` on the CLI.
 
 ## Environment variables and API configuration
 Below is an explanation of the environment variables used in this project:
@@ -155,11 +166,11 @@ On a development setting, it's desirable to modify and test out different parts 
     ```
 
 ## Upcoming features
-* Add unit tests using `pytest` to validate application functionality and ensure code quality.  
 * Add the option of producing confidence lightweight scores for the `predict/` endpoint of the API so users can assess the reliability of the translations without bloating image size with packages like `torch`.
 * Add open-source telemetry collection to keep track of API usage and performance metrics, like response times and error rates. 
 * Add a module for model fine-tuning with custom datasets to allow users to adapt translation models to specific domains or languages, simulating a real-world scenario.  
 * Use `nginx` in addition to a `docker-compose.yml` to scale and manage the API service using several containers.
+* Integrate CI/CD pipelines using GitHub Actions to automate running the `pytest` tests whenever a pull request is created.
 * Automate the process of deploying the Docker container to cloud services like AWS EC2 in order to expose the API to public consumption using `boto3`.
 
 
