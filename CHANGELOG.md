@@ -1,6 +1,9 @@
 # Changelog
 All significant changes to the project will be kept in this file.
 
+## v0.0.4
+Added the option to scale the API service using `nginx` as a reverse proxy and load balancer. This feature is implemented entirely from Docker, using `docker-compose.yml` to orchestrate multiple instances of the API service behind a single `nginx` container. Instructions of use are included in the `README.md` file, section 3.
+
 ## v0.0.3
 Added unit tests using `pytest` for:  
 * all API endpoints under different scenarios  

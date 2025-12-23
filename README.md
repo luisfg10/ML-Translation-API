@@ -2,16 +2,15 @@
 
 This project uses translation ML models from the HuggingFace `Transformers` library and serves them as a lightweight API service using `FastAPI` as the web framework on a `uvicorn` server and `optimum.onnxruntime` for model inference optimization. It offers an optional capability to store and retrieve the ML models using `AWS S3`.
 
-For comparison, this project is able to run the API on a ~1GB Docker container, while projects using frameworks like `torch` can take ~15GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
+For comparison, this project is able to run the API on a ~1GB Docker container, while projects using frameworks like `torch` can take ~10GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
 
 ## Index
-* [Repository Structure](#repository-structure)
-* [Environment variables and API configuration](#environment-variables-and-api-configuration)
-* [How to run locally](#how-to-run-locally)
-* [Upcoming features](#upcoming-features)
-* [Relevant Documentation](#relevant-documentation)
-
-## Repository Structure
+* [1. Repository Structure](#1-repository-structure)
+* [2. Environment variables and API configuration](#2-environment-variables-and-api-configuration)
+* [3. How to run locally](#3-how-to-run-locally)
+* [4. Upcoming features](#4-upcoming-features)
+* [5. Relevant Documentation](#5-relevant-documentation)
+## 1. Repository Structure
 
 Here is an overview of the structure of the repository:
 
@@ -43,7 +42,7 @@ ML-Translation-API/
 ├── main.py                     # Definition of the main executables + adequation into CLI commands
 ├── requirements.txt            
 ├── Dockerfile                  # Production Dockerfile
-├── Dockerfile-dev              # Development Dockerfile
+├── Dockerfile.dev              # Development Dockerfile
 ├── .dockerignore               # Files and directories to ignore in Docker builds
 ├── .gitignore
 ├── CHANGELOG.md                # Document significant changes across project versions
@@ -69,7 +68,7 @@ This directory contains the test suite for the application, organized into subdi
 * `models/`: Contains tests related to model management and functionality.
 The tests can be run automatically using the `make run_pytest` command from the `Makefile` on the CLI.
 
-## Environment variables and API configuration
+## 2. Environment variables and API configuration
 Below is an explanation of the environment variables used in this project:
 
 ### Testing Variables
@@ -94,7 +93,7 @@ The credentials required for accessing AWS S3 services. These should be set as e
 
 **Note**: The AWS S3 is an optional, non-essential feature of the project. The API will still work fine if using local model storage.
 
-## How to run locally  
+## 3. How to run locally  
 It's advised to run the project in a Docker container for ease of deployment and consistency across different environments. Alternatively, it can be run using other options like virtual environments, but this is not covered in this README.
 
 ### First Steps
@@ -130,17 +129,17 @@ On a development setting, it's desirable to modify and test out different parts 
 
 1. Build a development Docker image:
     ```bash
-    docker build -f Dockerfile-dev -t ml-translation-api:dev .
+    docker build -f Dockerfile.dev -t ml-translation-api:dev .
     ```
-**Command breakdown:**
-- `-f Dockerfile-dev`: Specifies to Docker o use the `Dockerfile-dev` file for building the image instead of the default `Dockerfile`. 
+Command breakdown:
+- `-f Dockerfile.dev`: Specifies to Docker o use the `Dockerfile.dev` file for building the image instead of the default `Dockerfile`. 
 
 2. Run the container in development mode with volume mounting and interactive shell:
     ```bash
     docker run --rm -v "${PWD}":/app -p 8000:8000 -it ml-translation-api:dev
     ```
 
-**Command breakdown:**
+Command breakdown:
 - `docker run`: Creates and starts a new container
 - `--rm`: Automatically removes the container when it exits (keeps system clean)
 - `-v "${PWD}":/app`: Mounts the current directory (`${PWD}`) to the container's `/app` directory
@@ -164,16 +163,33 @@ On a development setting, it's desirable to modify and test out different parts 
     make test_model_prediction
     ```
 
-## Upcoming features
+### Scaling with nginx and docker-compose
+
+The API can be scaled to handle higher traffic using multiple containers managed by nginx as a reverse proxy and load balancer.
+
+**Architecture:**
+- App containers: Multiple FastAPI instances running on port 8000 (internal networking).
+- nginx container: Entry point listening on port 80, forwards requests to app containers. Nginx server is created from a custom Dockerfile (`Dockerfile.nginx`) with a configuration file (`settings/nginx.conf`) that defines the reverse proxy behavior.
+- Docker Compose: Defined in `docker-compose.yml`, orchestrates the services (app and reverse proxy) and handles automatic load balancing.
+
+
+In order to run the scaled app (example of 3 app instances), use the following command:
+
+```bash
+docker compose up --scale app=3 -d
+```
+
+With this, the API is now accessible at `http://localhost/` (port 80) and nginx will distribute incoming requests across the 3 app instances running in the background.
+
+## 4. Upcoming features
 * Add the option of producing confidence lightweight scores for the `predict/` endpoint of the API so users can assess the reliability of the translations without bloating image size with packages like `torch`.
-* Add open-source telemetry collection to keep track of API usage and performance metrics, like response times and error rates. 
+* Add open-source telemetry collection to keep track of API usage and performance metrics, like response times, usage rates and model accuracy metrics.
 * Add a module for model fine-tuning with custom datasets to allow users to adapt translation models to specific domains or languages, simulating a real-world scenario.  
-* Use `nginx` in addition to a `docker-compose.yml` to scale and manage the API service using several containers.
 * Integrate CI/CD pipelines using GitHub Actions to automate running the `pytest` tests whenever a pull request is created.
 * Automate the process of deploying the Docker container to cloud services like AWS EC2 in order to expose the API to public consumption using `boto3`.
 
 
-## Relevant Documentation
+## 5. Relevant Documentation
 * [FastAPI](https://fastapi.tiangolo.com/tutorial/)
 * [Uvicorn](https://uvicorn.dev/)
 * [HuggingFace Hub Translation models](https://huggingface.co/models?pipeline_tag=translation&sort=trending)
@@ -182,4 +198,5 @@ On a development setting, it's desirable to modify and test out different parts 
 * [Boto3 (AWS SDK for Python)](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
 * [Pytest](https://docs.pytest.org/en/stable/)
 * [Flake8](https://flake8.pycqa.org/en/latest/user/configuration.html)
+* [nginx Beginner's Guide](https://nginx.org/en/docs/beginners_guide.html)
 * [Postman Docs](https://learning.postman.com/docs/introduction/overview/)
