@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: .
+    expose:
+      - "8000"
+
+  nginx:
+    build: 
+      context: .
+      dockerfile: Dockerfile.nginx
+    
+    # only run nginx after the app is running
+    depends_on:
+      - app
+
+    # host machine: nginx container
+    ports:
+      - "80:80"
