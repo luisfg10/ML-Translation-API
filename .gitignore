@@ -3,6 +3,7 @@ __pycache__/
 .vscode/
 venv/
 models/downloads/*
+.pytest_cache/
 
 # specific files
 .env

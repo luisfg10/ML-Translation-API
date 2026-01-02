@@ -1,13 +1,16 @@
 # ML Translation API
 
-This project uses translation ML models from the HuggingFace `Transformers` library and serves them as a lightweight API service using `FastAPI` as the web framework on a `uvicorn` server and `optimum.onnxruntime` for model inference optimization. It offers an optional capability to store and retrieve the ML models using `AWS S3`.
+This project uses translation ML models from the HuggingFace `Transformers` library and serves them as a lightweight API service using `FastAPI` as the web framework on a `uvicorn` server and `optimum.onnxruntime` for model inference optimization. It also offers:
+* An optional capability to store and retrieve the ML models using `AWS S3`
+* Unit and system tests using `pytest` to ensure the reliability of any updates to the codebase
+* Application scaling using `nginx` as a reverse proxy and load balancer, orchestrated with `docker-compose`
 
-For comparison, this project is able to run the API on a ~1GB Docker container, while projects using frameworks like `torch` can take ~10GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
+For comparison, this project is able to run the API on a ~1GB Docker container, while projects using frameworks like `torch` for model management can take +10GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
 
 ## Index
 * [1. Repository Structure](#1-repository-structure)
 * [2. Environment variables and API configuration](#2-environment-variables-and-api-configuration)
-* [3. How to run locally](#3-how-to-run-locally)
+* [3. How to run](#3-how-to-run)
 * [4. Upcoming features](#4-upcoming-features)
 * [5. Relevant Documentation](#5-relevant-documentation)
 ## 1. Repository Structure
@@ -19,7 +22,7 @@ ML-Translation-API/
 ├── app/                        # Application core modules
 │   ├── definition.py            
 │   └── schemas.py           
-├── exp/                        # API exploration
+├── examples/                        # API exploration
 │   ├── postman_collection.json         
 │   └── api_exploration.ipynb
 ├── models/                     # Model management and utilities
@@ -59,7 +62,7 @@ This directory contains the required configuration files for running the applica
 ### `Makefile` and `main.py`
 The `Makefile` contains several CLI targets to facilitate development and testing of the application, as well as the main command to run the API on a `uvicorn` server. These commands come from the `main.py` file, and are explained there in more detail.
 
-### `exp/` directory
+### `examples/` directory
 This directory contains useful material for understanding and exploring the API's capabilities and behavior, including a Jupyter notebook and a Postman collection with examples. Both resources are complementary to better understand how to interact with the API.
 
 ### `tests/` directory
@@ -93,10 +96,10 @@ The credentials required for accessing AWS S3 services. These should be set as e
 
 **Note**: The AWS S3 is an optional, non-essential feature of the project. The API will still work fine if using local model storage.
 
-## 3. How to run locally  
+## 3. How to run  
 It's advised to run the project in a Docker container for ease of deployment and consistency across different environments. Alternatively, it can be run using other options like virtual environments, but this is not covered in this README.
 
-### First Steps
+### First Steps for local setup
 
 1. Make sure you have [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed on your machine.  
 2. Clone this repository to your local machine using:
@@ -108,21 +111,6 @@ It's advised to run the project in a Docker container for ease of deployment and
    cd ML-Translation-API
    ```
 4. Create a `.env` file in the `settings/` directory based on the provided `.env.template` file. Fill in the necessary environment variables depending on your use case. From the terminal, this may be done with the commands:
-
-### Production Setup
-The production version of the project goes straight to business and runs the API server automatically as a command when the container starts.
-
-1. Build the Docker image from the provided `Dockerfile`:
-    ```bash
-    docker build -t ml-translation-api .
-    ```
-2. Run the Docker container, mapping the container's port to your local machine's port:
-    ```bash
-    docker run -p 8000:8000 ml-translation-api
-    ```
-    This automatically starts the uvicorn server running the FastAPI application, and maps port `8000` of the container (left) to port `8000` (right) on your local machine.
-
-3. Once the container is running, you can access the API documentation by navigating to `http://localhost:8000/docs` in your web browser. This will open the interactive Swagger UI where you can test the API endpoints. Alternatively, call the endpoints directly using tools like `curl` or Postman.
 
 ### Development Setup
 On a development setting, it's desirable to modify and test out different parts of the project before running the API server.
@@ -163,8 +151,22 @@ Command breakdown:
     make test_model_prediction
     ```
 
-### Scaling with nginx and docker-compose
+### Production Setup
+The production version of the project goes straight to business and runs the API server automatically as a command when the container starts.
 
+1. Build the Docker image from the provided `Dockerfile`:
+    ```bash
+    docker build -t ml-translation-api .
+    ```
+2. Run the Docker container, mapping the container's port to your local machine's port:
+    ```bash
+    docker run -p 8000:8000 ml-translation-api
+    ```
+    This automatically starts the uvicorn server running the FastAPI application, and maps port `8000` of the container (left) to port `8000` (right) on your local machine.
+
+3. Once the container is running, you can access the API documentation by navigating to `http://localhost:8000/docs` in your web browser. This will open the interactive Swagger UI where you can test the API endpoints. Alternatively, call the endpoints directly using tools like `curl` or Postman.
+
+### Scaling with nginx and docker-compose
 The API can be scaled to handle higher traffic using multiple containers managed by nginx as a reverse proxy and load balancer.
 
 **Architecture:**
