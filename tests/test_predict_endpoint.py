@@ -67,13 +67,11 @@ class TestPredictEndpoint:
         text_to_translate = self.sample_texts.get(source_lang)
         request_payload = {
             "items": [{
-                "source": source_lang,
-                "target": target_lang,
                 "text": text_to_translate
             }]
         }
         response = self.client.post(
-            "/predict",
+            f"/predict/{translation_pair_to_test}",
             json=request_payload
         )
 
@@ -115,25 +113,19 @@ class TestPredictEndpoint:
         request_payload = {
             "items": [
                 {
-                    "source": source_lang,
-                    "target": target_lang,
                     "text": text_to_translate
                 },
                 {
-                    "source": source_lang,
-                    "target": target_lang,
                     "text": text_to_translate
                 },
                 {
-                    "source": source_lang,
-                    "target": target_lang,
                     "text": text_to_translate
                 }
             ]
         }
 
         response = self.client.post(
-            "/predict",
+            f"/predict/{translation_pair_to_test}",
             json=request_payload
         )
 
@@ -176,8 +168,6 @@ class TestPredictEndpoint:
         # Include optional fields in the request
         request_payload = {
             "items": [{
-                "source": source_lang,
-                "target": target_lang,
                 "text": text_to_translate,
                 "max_length": 256,
                 "num_beams": 3,
@@ -186,7 +176,7 @@ class TestPredictEndpoint:
         }
 
         response = self.client.post(
-            "/predict",
+            f"/predict/{translation_pair_to_test}",
             json=request_payload
         )
 
@@ -208,27 +198,27 @@ class TestPredictEndpoint:
 
     def test_prediction_invalid_translation_pair(self):
         '''
-        Test the API's 500 response for an invalid translation pair.
-        unlike the other tests, this one can be run without any available models.
+        Test the API's 422 response for an invalid translation pair in the URL path.
+        Unlike the other tests, this one can be run without any available models.
         '''
         # Use an invalid translation pair that shouldn't exist
+        invalid_translation_pair = "invalid-nonexistent"
         request_payload = {
             "items": [{
-                "source": "invalid",
-                "target": "nonexistent",
                 "text": "Test text for invalid translation pair"
             }]
         }
 
         response = self.client.post(
-            "/predict",
+            f"/predict/{invalid_translation_pair}",
             json=request_payload
         )
 
-        # Should return 500 error for invalid translation pair
-        assert response.status_code == 500
+        # Should return 422 error for invalid translation pair
+        assert response.status_code == 422
         # Check error response structure
         data = response.json()
         assert "detail" in data
         assert isinstance(data["detail"], str)
-        assert "translation attempts failed" in data["detail"].lower()
+        assert "not supported" in data["detail"].lower()
+        assert "available pairs" in data["detail"].lower()

@@ -1,6 +1,11 @@
 # Third-party imports
 from loguru import logger
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Query,
+    Path
+)
 
 # Local imports
 from settings.config import (
@@ -80,20 +85,35 @@ def models(
     return {"models": model_metadata}
 
 
-@app.post("/predict", response_model=PredictResponse)
-def predict(request: PredictRequest):
+@app.post("/predict/{translation_pair}", response_model=PredictResponse)
+def predict(
+    translation_pair: str = Path(
+        ...,
+        description="Translation pair in format 'source-target' (e.g., 'en-es', 'fr-de')"
+    ),
+    request: PredictRequest = None
+):
     '''
-    Translation endpoint - handles both single and batch predictions.
+    Translation endpoint for a specific translation pair.
+    Handles both single and batch predictions for the specified translation pair.
 
+    The translation pair is specified in the URL path (e.g., /predict/en-es).
     Send a single item in the array for individual translation,
     or multiple items for batch processing.
     '''
+    # Validate translation pair against available models
+    if translation_pair not in model_manager.model_mappings:
+        available_pairs = list(model_manager.model_mappings.keys())
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Translation pair '{translation_pair}' is not supported."
+                f"Available pairs: {available_pairs}")
+        )
+
     results = []
 
     for index, item in enumerate(request.items):
-        # Construct translation pair from source and target
-        translation_pair = f"{item.source}-{item.target}"
-
         # Get translation from model manager
         try:
             translated_text = model_manager.predict(
@@ -111,7 +131,7 @@ def predict(request: PredictRequest):
         except Exception as e:
             logger.error(
                 f"Translation failed for item at position {index} "
-                f"with request data {item.model_dump()} "
+                f"with translation pair '{translation_pair}' and request data {item.model_dump()} "
                 f"and exception: {str(e)}"
             )
 

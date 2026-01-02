@@ -1,6 +1,12 @@
 # Changelog
 All significant changes to the project will be kept in this file.
 
+## v0.0.5  
+Refactored the `predict/` endpoint into `predict/{translation_pair}`, meaning each translation pair now has its own dedicated endpoint. This has several desirable properties:
+* Simplifies the endpoint request body, not needing to specify source and target languages anymore
+* Improves the organization of the API structure, as different translation models are no longer mixed into a single endpoint
+* Allows for more detailed logging and monitoring of individual translation pairs, a feature which will be added in future versions
+
 ## v0.0.4
 Added the option to scale the API service using `nginx` as a reverse proxy and load balancer. This feature is implemented entirely from Docker, using `docker-compose.yml` to orchestrate multiple instances of the API service behind a single `nginx` container. Instructions of use are included in the `README.md` file, section 3.
 

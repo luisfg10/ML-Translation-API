@@ -1,5 +1,5 @@
 # directories
-exp/*
+examples/*
 tests/*
 venv/*
 models/downloads/*
@@ -13,3 +13,4 @@ LICENSE
 .flake8
 .DS_Store
 README.md
+CHANGELOG.md

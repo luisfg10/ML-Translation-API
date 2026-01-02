@@ -94,13 +94,12 @@ class ModelsResponse(BaseModel):
 class PredictData(BaseModel):
     '''
     Schema for input data to the model in prediction requests.
+    Note: Translation pair (source-target) is now specified in the endpoint path.
 
     Hints:
         ge: greater than or equal to
         le: less than or equal to
     '''
-    source: str = Field(..., description="Source language code (e.g., 'en' for English).")
-    target: str = Field(..., description="Target language code (e.g., 'es' for Spanish).")
     text: str = Field(..., description="Text to be translated.")
     max_length: Optional[int] = Field(
         512,
@@ -122,8 +121,6 @@ class PredictData(BaseModel):
     class ConfigDict:
         json_schema_extra = {
             "example": {
-                "source": "en",
-                "target": "es",
                 "text": "Hello, how are you?",
                 "max_length": 512,
                 "num_beams": 4,
@@ -135,10 +132,11 @@ class PredictData(BaseModel):
 class PredictRequest(BaseModel):
     '''
     Schema for prediction requests - handles both single and batch predictions.
+    All items in the batch will use the same translation pair specified in the endpoint path.
     '''
     items: List[PredictData] = Field(
         ...,
-        description="List of translation requests, containing a single item or several.",
+        description="List of translation requests for the same translation pair.",
         min_length=1,
         max_length=100
     )
@@ -148,17 +146,13 @@ class PredictRequest(BaseModel):
             "example": {
                 "items": [
                     {
-                        "source": "en",
-                        "target": "es",
                         "text": "Hello, how are you?",
                         "max_length": 512,
                         "num_beams": 4,
                         "early_stopping": True
                     },
                     {
-                        "source": "fr",
-                        "target": "de",
-                        "text": "Excusez-moi, je parle pas français.",
+                        "text": "Good morning, everyone!",
                         "max_length": 256,
                         "num_beams": 3,
                         "early_stopping": True
@@ -195,6 +189,7 @@ class SinglePredictResponse(BaseModel):
 class PredictResponse(BaseModel):
     '''
     Schema for prediction responses.
+    All results correspond to the same translation pair specified in the endpoint path.
     '''
     results: List[SinglePredictResponse] = Field(
         ...,
@@ -211,7 +206,7 @@ class PredictResponse(BaseModel):
                     },
                     {
                         "position": 1,
-                        "result": "Entschuldigen Sie, ich spreche kein Französisch."
+                        "result": "¡Buenos días a todos!"
                     }
                 ]
             }
