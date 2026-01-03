@@ -171,7 +171,7 @@ The API can be scaled to handle higher traffic using multiple containers managed
 
 **Architecture:**
 - App containers: Multiple FastAPI instances running on port 8000 (internal networking).
-- nginx container: Entry point listening on port 80, forwards requests to app containers. Nginx server is created from a custom Dockerfile (`Dockerfile.nginx`) with a configuration file (`settings/nginx.conf`) that defines the reverse proxy behavior.
+- nginx container: Entry point listening on port 80, forwards requests to app containers. Nginx server is created from its default image with a configuration file (`settings/nginx.conf`) that defines the reverse proxy behavior.
 - Docker Compose: Defined in `docker-compose.yml`, orchestrates the services (app and reverse proxy) and handles automatic load balancing.
 
 

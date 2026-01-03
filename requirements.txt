@@ -2,6 +2,7 @@ boto3==1.40.74
 fastapi==0.118.0
 loguru==0.7.3
 optimum[onnxruntime]==2.0.0
+prometheus-fastapi-instrumentator==7.1.0
 pydantic==2.11.9
 python-dotenv==1.2.1
 sacremoses==0.1.1

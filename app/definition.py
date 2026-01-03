@@ -6,6 +6,7 @@ from fastapi import (
     Query,
     Path
 )
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # Local imports
 from settings.config import (
@@ -45,6 +46,10 @@ app = FastAPI(
     description=API_DESCRIPTION,
     version=API_VERSION
 )
+
+# Configure Prometheus metrics
+instrumentator = Instrumentator()
+instrumentator.instrument(app).expose(app)
 
 
 @app.get("/", response_model=RootResponse)
