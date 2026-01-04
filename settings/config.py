@@ -1,6 +1,6 @@
 # API info
 API_NAME: str = "Translation API"
-API_VERSION: str = "v0.0.5"
+API_VERSION: str = "v0.0.6"
 API_DESCRIPTION: str = '''API for text translation using pre-trained Transformer models.'''
 
 # general settings

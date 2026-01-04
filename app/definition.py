@@ -7,6 +7,10 @@ from fastapi import (
     Path
 )
 from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_client import (
+    Counter,
+    Histogram
+)
 
 # Local imports
 from settings.config import (
@@ -22,6 +26,24 @@ from app.schemas import (
     ModelsResponse,
     PredictRequest,
     PredictResponse,
+)
+
+# ---------------------------------------------------------------------
+# Custom Prometheus Metrics
+
+# Track translation requests by language pair and status
+translation_requests_total = Counter(
+    'translation_requests_total',
+    'Total translation requests by language pair and status',
+    ['translation_pair', 'status']
+)
+
+# Track total translations contained within a single request
+translation_texts_histogram = Histogram(
+    'translation_texts_distribution',
+    'Distribution of texts within a single request by translation pair',
+    ['translation_pair'],
+    buckets=[1, 2, 5, 10, 20, 50]
 )
 
 # ---------------------------------------------------------------------
@@ -106,9 +128,20 @@ def predict(
     Send a single item in the array for individual translation,
     or multiple items for batch processing.
     '''
+    translation_texts_histogram.labels(
+        translation_pair=translation_pair
+    ).observe(len(request.items))
+
     # Validate translation pair against available models
     if translation_pair not in model_manager.model_mappings:
         available_pairs = list(model_manager.model_mappings.keys())
+
+        # Track failed requests due to invalid translation pair
+        translation_requests_total.labels(
+            translation_pair=translation_pair,
+            status="invalid_pair"
+        ).inc()
+
         raise HTTPException(
             status_code=422,
             detail=(
@@ -140,8 +173,21 @@ def predict(
                 f"and exception: {str(e)}"
             )
 
+    # Track the request outcome in Prometheus metrics
+    if results:
+        # Successful request (at least some translations worked)
+        status = "success" if len(results) == len(request.items) else "partial_success"
+        translation_requests_total.labels(
+            translation_pair=translation_pair,
+            status=status
+        ).inc()
+
     # Return 500 error if no translations were successful
-    if not results:
+    else:
+        translation_requests_total.labels(
+            translation_pair=translation_pair,
+            status="failure"
+        ).inc()
         raise HTTPException(
             status_code=500,
             detail="All translation attempts failed."

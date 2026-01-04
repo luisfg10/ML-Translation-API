@@ -4,5 +4,8 @@ global:
 scrape_configs:
   - job_name: 'translation-api'
     static_configs:
-      - targets: ['nginx:80']  # scrape nginx which proxies to the app
+      # assumes service not scaled beyond one instance
+      # for multiple instances, manually switch to:
+      # - targets: ['app:8000', 'app2:8000', 'app3:8000', ...]
+      - targets: ['app:8000']
     metrics_path: '/metrics'

@@ -3,6 +3,7 @@ This project is a Python-based application designed to serve `Hugging Face` tran
 
 ### Golden Rules
 * When unsure about implementation details or requirements, ALWAYS consult the developer rather than making assumptions.
+* Always ask for permission before creating new files or deleting existing ones.
 * Limit your responses to the specific ask of the developer.
 
 ### Coding Standards
