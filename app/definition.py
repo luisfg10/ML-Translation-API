@@ -1,5 +1,6 @@
 # Third-party imports
 from loguru import logger
+import time
 from fastapi import (
     FastAPI,
     HTTPException,
@@ -7,10 +8,6 @@ from fastapi import (
     Path
 )
 from prometheus_fastapi_instrumentator import Instrumentator
-from prometheus_client import (
-    Counter,
-    Histogram
-)
 
 # Local imports
 from settings.config import (
@@ -27,24 +24,13 @@ from app.schemas import (
     PredictRequest,
     PredictResponse,
 )
-
-# ---------------------------------------------------------------------
-# Custom Prometheus Metrics
-
-# Track translation requests by language pair and status
-translation_requests_total = Counter(
-    'translation_requests_total',
-    'Total translation requests by language pair and status',
-    ['translation_pair', 'status']
+from app.monitoring_utils import (
+    loaded_models_gauge,
+    translation_requests_total,
+    translation_texts_histogram,
+    predict_request_latency_histogram,
 )
 
-# Track total translations contained within a single request
-translation_texts_histogram = Histogram(
-    'translation_texts_distribution',
-    'Distribution of texts within a single request by translation pair',
-    ['translation_pair'],
-    buckets=[1, 2, 5, 10, 20, 50]
-)
 
 # ---------------------------------------------------------------------
 # Model loading (outside endpoints)
@@ -52,7 +38,8 @@ translation_texts_histogram = Histogram(
 model_manager = TranslationModelManager(
     model_mappings=EnvironmentConfig.model_mappings,
     model_storage_mode=EnvironmentConfig.MODEL_STORAGE_MODE,
-    overwrite_existing_models=EnvironmentConfig.OVERWRITE_EXISTING_MODELS
+    overwrite_existing_models=EnvironmentConfig.OVERWRITE_EXISTING_MODELS,
+    model_cache_gauge=loaded_models_gauge
 )
 model_manager.load_api_models(
     s3_bucket_name=EnvironmentConfig.S3_BUCKET_NAME,
@@ -128,6 +115,9 @@ def predict(
     Send a single item in the array for individual translation,
     or multiple items for batch processing.
     '''
+    # Start timing the request (for latency metrics)
+    start_time = time.time()
+
     translation_texts_histogram.labels(
         translation_pair=translation_pair
     ).observe(len(request.items))
@@ -176,10 +166,12 @@ def predict(
     # Track the request outcome in Prometheus metrics
     if results:
         # Successful request (at least some translations worked)
-        status = "success" if len(results) == len(request.items) else "partial_success"
         translation_requests_total.labels(
             translation_pair=translation_pair,
-            status=status
+            status=(
+                "success" if len(results) == len(request.items)
+                else "partial_success"
+            )
         ).inc()
 
     # Return 500 error if no translations were successful
@@ -192,4 +184,11 @@ def predict(
             status_code=500,
             detail="All translation attempts failed."
         )
+
+    # Record latency for successful requests
+    duration = time.time() - start_time
+    predict_request_latency_histogram.labels(
+        translation_pair=translation_pair
+    ).observe(duration)
+
     return {"results": results}
