@@ -1,7 +1,7 @@
 # Third-party imports
 import json
 from loguru import logger
-from typing import Dict, Optional
+from typing import Dict, Optional, TYPE_CHECKING
 from pathlib import Path
 from transformers import AutoTokenizer
 from optimum.onnxruntime import ORTModelForSeq2SeqLM
@@ -13,6 +13,9 @@ from settings.config import (
     LOCAL_MODEL_DIR
 )
 from models.aws import AWSServicesManager
+
+if TYPE_CHECKING:
+    from prometheus_client import Gauge
 
 
 class TranslationModelManager(AWSServicesManager):
@@ -31,7 +34,8 @@ class TranslationModelManager(AWSServicesManager):
             self,
             model_mappings: Dict[str, str],
             model_storage_mode: str,
-            overwrite_existing_models: bool = False
+            overwrite_existing_models: bool = False,
+            model_cache_gauge: Optional['Gauge'] = None
     ) -> None:
         '''
         Initialize the ModelManager class.
@@ -47,6 +51,9 @@ class TranslationModelManager(AWSServicesManager):
             overwrite_existing_models: bool
                 Whether to overwrite existing local model files when doing download
                 operations if such files already exist locally.
+            model_cache_gauge: Optional[Gauge]
+                An optional Prometheus Gauge metric to track the number of models
+                currently cached in memory.
         '''
         # check inputs
         if (
@@ -84,6 +91,8 @@ class TranslationModelManager(AWSServicesManager):
             "and translation pairs: "
             f"{list(self.model_mappings.keys())}"
         )
+        # save gauge metric if provided
+        self._model_cache_gauge = model_cache_gauge or None
 
         # init parent class
         if self.model_storage_mode == 's3':
@@ -441,8 +450,10 @@ class TranslationModelManager(AWSServicesManager):
                 "decoder_model.onnx",
                 "decoder_with_past_model.onnx"
             ]
-            missing_files = [f for f in required_files if not (abs_model_dir / f).exists()]
-
+            missing_files = [
+                f for f in required_files
+                if not (abs_model_dir / f).exists()
+            ]
             if missing_files:
                 raise FileNotFoundError(
                     f"Missing required ONNX model files in '{abs_model_dir}': {missing_files}. "
@@ -458,6 +469,9 @@ class TranslationModelManager(AWSServicesManager):
             self._tokenizer_cache[translation_pair] = AutoTokenizer.from_pretrained(
                 str(abs_model_dir)
             )
+            # Update model cache gauge if provided
+            if self._model_cache_gauge:
+                self._model_cache_gauge.set(len(self._model_cache))
         else:
             logger.debug(f"Using cached model for '{translation_pair}'")
 
