@@ -24,7 +24,7 @@ from app.schemas import (
     PredictRequest,
     PredictResponse,
 )
-from app.monitoring_utils import (
+from app.metrics import (
     loaded_models_gauge,
     translation_requests_total,
     translation_texts_histogram,

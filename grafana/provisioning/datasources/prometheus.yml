@@ -1,6 +1,7 @@
 apiVersion: 1
 
 datasources:
+  # set up Prometheus as the default data source
   - name: Prometheus
     type: prometheus
     access: proxy
