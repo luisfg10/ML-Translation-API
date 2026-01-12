@@ -1,6 +1,9 @@
 # Changelog
 All significant changes to the project will be kept in this file.
 
+## v0.0.6
+Updated the API to generate metrics using `prometheus-fastapi-instrumentator`, collect them using `Prometheus`, and visualize them using `Grafana`. The latter includes pre-configured data sources and dashboards for basic monitoring of the service.  
+
 ## v0.0.5  
 Refactored the `predict/` endpoint into `predict/{translation_pair}`, meaning each translation pair now has its own dedicated endpoint. This has several desirable properties:
 * Simplifies the endpoint request body, not needing to specify source and target languages anymore

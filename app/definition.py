@@ -1,11 +1,13 @@
 # Third-party imports
 from loguru import logger
+import time
 from fastapi import (
     FastAPI,
     HTTPException,
     Query,
     Path
 )
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # Local imports
 from settings.config import (
@@ -14,7 +16,7 @@ from settings.config import (
     API_DESCRIPTION
 )
 from settings.environment_config import EnvironmentConfig
-from models.management import TranslationModelManager
+from models import TranslationModelManager
 from app.schemas import (
     RootResponse,
     HealthResponse,
@@ -22,6 +24,13 @@ from app.schemas import (
     PredictRequest,
     PredictResponse,
 )
+from app.metrics import (
+    loaded_models_gauge,
+    translation_requests_total,
+    translation_texts_histogram,
+    predict_request_latency_histogram,
+)
+
 
 # ---------------------------------------------------------------------
 # Model loading (outside endpoints)
@@ -29,7 +38,8 @@ from app.schemas import (
 model_manager = TranslationModelManager(
     model_mappings=EnvironmentConfig.model_mappings,
     model_storage_mode=EnvironmentConfig.MODEL_STORAGE_MODE,
-    overwrite_existing_models=EnvironmentConfig.OVERWRITE_EXISTING_MODELS
+    overwrite_existing_models=EnvironmentConfig.OVERWRITE_EXISTING_MODELS,
+    model_cache_gauge=loaded_models_gauge
 )
 model_manager.load_api_models(
     s3_bucket_name=EnvironmentConfig.S3_BUCKET_NAME,
@@ -45,6 +55,10 @@ app = FastAPI(
     description=API_DESCRIPTION,
     version=API_VERSION
 )
+
+# Configure Prometheus metrics
+instrumentator = Instrumentator()
+instrumentator.instrument(app).expose(app)
 
 
 @app.get("/", response_model=RootResponse)
@@ -101,9 +115,23 @@ def predict(
     Send a single item in the array for individual translation,
     or multiple items for batch processing.
     '''
+    # Start timing the request (for latency metrics)
+    start_time = time.time()
+
+    translation_texts_histogram.labels(
+        translation_pair=translation_pair
+    ).observe(len(request.items))
+
     # Validate translation pair against available models
     if translation_pair not in model_manager.model_mappings:
         available_pairs = list(model_manager.model_mappings.keys())
+
+        # Track failed requests due to invalid translation pair
+        translation_requests_total.labels(
+            translation_pair=translation_pair,
+            status="invalid_pair"
+        ).inc()
+
         raise HTTPException(
             status_code=422,
             detail=(
@@ -135,10 +163,32 @@ def predict(
                 f"and exception: {str(e)}"
             )
 
+    # Track the request outcome in Prometheus metrics
+    if results:
+        # Successful request (at least some translations worked)
+        translation_requests_total.labels(
+            translation_pair=translation_pair,
+            status=(
+                "success" if len(results) == len(request.items)
+                else "partial_success"
+            )
+        ).inc()
+
     # Return 500 error if no translations were successful
-    if not results:
+    else:
+        translation_requests_total.labels(
+            translation_pair=translation_pair,
+            status="failure"
+        ).inc()
         raise HTTPException(
             status_code=500,
             detail="All translation attempts failed."
         )
+
+    # Record latency for successful requests
+    duration = time.time() - start_time
+    predict_request_latency_histogram.labels(
+        translation_pair=translation_pair
+    ).observe(duration)
+
     return {"results": results}

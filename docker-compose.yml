@@ -6,14 +6,42 @@ services:
       - "8000"
 
   nginx:
-    build: 
-      context: .
-      dockerfile: Dockerfile.nginx
-    
-    # only run nginx after the app is running
+    image: nginx:latest
+    volumes:
+      # file on host machine : file in container
+      - ./settings/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      # only run nginx after the app is running
+      - app
+    ports:
+      # host machine port: nginx container port
+      - "80:80"
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
       - app
 
-    # host machine: nginx container
+  grafana:
+    image: grafana/grafana:latest
     ports:
-      - "80:80"
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    environment:
+      # Enable anonymous access - no login required (change if running in production)
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      # Default admin credentials (optional, since anonymous is enabled)
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
+volumes:
+  grafana-data:

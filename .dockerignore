@@ -2,6 +2,7 @@
 examples/*
 tests/*
 venv/*
+.github/*
 models/downloads/*
 .vscode/
 __pycache__/

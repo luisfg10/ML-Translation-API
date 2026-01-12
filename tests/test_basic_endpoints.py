@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from app.definition import app
+from app import app
 
 
 class TestBasicEndpoints:
