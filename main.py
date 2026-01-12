@@ -11,8 +11,6 @@ from settings.config import (
     LOCAL_MODEL_DIR
 )
 from settings.environment_config import EnvironmentConfig
-from models.aws import AWSServicesManager
-from models.management import TranslationModelManager
 
 
 # ---------------------------------------------------------------------
@@ -44,6 +42,8 @@ def list_aws_s3_bucket_contents(
         s3_bucket_name (str)
             The name of the S3 bucket to list contents from.
     '''
+    from models import AWSServicesManager
+
     aws_manager = AWSServicesManager(service='s3')
     aws_manager.list_s3_bucket_contents(
         s3_bucket_name=s3_bucket_name,
@@ -68,6 +68,8 @@ def aws_s3_file_upload(
         s3_bucket_name (str)
             The name of the S3 bucket to upload the file to.
     '''
+    from models import AWSServicesManager
+
     aws_manager = AWSServicesManager(service='s3')
 
     # create test file
@@ -110,6 +112,8 @@ def aws_s3_file_download(
         local_filepath (str)
             The local path where the file will be saved.
     '''
+    from models import AWSServicesManager
+
     aws_manager = AWSServicesManager(service='s3')
     aws_manager.download_file_from_s3(
         s3_bucket_name=s3_bucket_name,
@@ -147,6 +151,8 @@ def aws_s3_directory_download(
         local_directory (str)
             The local directory where the files will be saved.
     '''
+    from models import AWSServicesManager
+
     aws_manager = AWSServicesManager(service='s3')
     directory_path = Path(LOCAL_MODEL_DIR) / test_translation_pair
     aws_manager.download_directory_from_s3(
@@ -203,6 +209,8 @@ def save_model(
             Whether to overwrite existing local model files when doing download
             operations if such files already exist locally. Defaults to False.
     '''
+    from models import TranslationModelManager
+
     model_manager = TranslationModelManager(
         model_mappings=EnvironmentConfig.model_mappings,
         model_storage_mode=model_storage_mode,
@@ -244,6 +252,8 @@ def run_model_prediction(
         input_text: str
             The text to translate.
     '''
+    from models import TranslationModelManager
+
     output = TranslationModelManager(
         model_mappings=EnvironmentConfig.model_mappings,
         model_storage_mode='local',
@@ -310,7 +320,7 @@ def run_api_on_server(
             operations if such files already exist locally. Defaults to False.
     '''
     # Import inside command for lazy loading
-    from app.definition import app
+    from app import app
 
     # run app
     uvicorn.run(

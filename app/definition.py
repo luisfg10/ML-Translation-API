@@ -16,7 +16,7 @@ from settings.config import (
     API_DESCRIPTION
 )
 from settings.environment_config import EnvironmentConfig
-from models.management import TranslationModelManager
+from models import TranslationModelManager
 from app.schemas import (
     RootResponse,
     HealthResponse,
