@@ -1,105 +1,67 @@
 # ML Translation API
 
-This project uses translation ML models from the HuggingFace `Transformers` library and serves them as a lightweight API service using `FastAPI` as the web framework on a `uvicorn` server and `optimum.onnxruntime` for model inference optimization. It also offers:
-* An optional capability to store and retrieve the ML models using `AWS S3`
-* Unit and system tests using `pytest` to ensure the reliability of any updates to the codebase
-* Application scaling using `nginx` as a reverse proxy and load balancer, orchestrated with `docker-compose`
+This repository uses `HuggingFace` translation models and serves them via a RESTful API using `FastAPI` on a `uvicorn` server. It uses `ONNX Runtime` for efficient and lightweight model inference, provides optional model fetching and storage with `AWS`, extensive but not comprehensive app functionality tests using `pytest`, containerization with `Docker` for both development and production setups, and app scaling, load balancing, monitoring and orchestration using `Docker Compose`, `nginx`, `Prometheus` and `Grafana`.
 
-For comparison, this project is able to run the API on a ~1GB Docker container, while projects using frameworks like `torch` for model management can take +10GB of space due to the heavy dependedencies required. This makes it suitable for deployment in resource-constrained environments.
+## Table of Contents
+- [1. Project Structure](#1-project-structure)
+- [2. Environment Configuration](#2-environment-configuration)
+- [3. Development Setup](#3-development-setup)
+- [4. Production Setup](#4-production-setup)
+- [5. Application Endpoints](#5-application-endpoints)
+- [6. Project Limitations and Future Work](#6-project-limitations-and-future-work)
+- [7. Relevant Documentation](#7-relevant-documentation)
 
-## Index
-* [1. Repository Structure](#1-repository-structure)
-* [2. Environment variables and API configuration](#2-environment-variables-and-api-configuration)
-* [3. How to run](#3-how-to-run)
-* [4. Upcoming features](#4-upcoming-features)
-* [5. Relevant Documentation](#5-relevant-documentation)
-## 1. Repository Structure
+## 1. Project Structure
 
-Here is an overview of the structure of the repository:
+Below is an overview of the structure of the repository:
 
 ```
 ML-Translation-API/
+├── .github/                    # GitHub-specific configurations like copilot settings
 ├── app/                        # Application core modules
-│   ├── definition.py            
+│   ├── definition.py
+│   ├── metrics.py            
 │   └── schemas.py           
-├── examples/                        # API exploration
+├── examples/                   # notebooks showing API usage and logic
 │   ├── postman_collection.json         
 │   └── api_exploration.ipynb
+│
 ├── models/                     # Model management and utilities
 │   ├── management.py 
 │   ├── aws.py           
 │   └── downloads/              # Downloaded translation models
 │       ├── en-es/              
 │       ├── en-fr/              
-│       └── ...                 
-├── settings/                   # Configuration and settings
-│   ├── config.py  
-│   ├── environment_config.py        
-│   ├── .env.template              
-│   ├── language_mappings.json  
-│   └── model_mappings.json     
-├── tests/                      # Test suite
-│   ├── test_basic_endpoints.py
-│   └── test_predict_endpoint.py
+│       └── ...      
+│
+├── grafana/                    # Grafana configurations
+├── prometheus/                 # Prometheus configurations
+├── settings/                   # Project configuration and settings (including nginx)
+├── tests/                      # Testing with pytest
 │   
 ├── main.py                     # Definition of the main executables + adequation into CLI commands
-├── requirements.txt            
-├── Dockerfile                  # Production Dockerfile
-├── Dockerfile.dev              # Development Dockerfile
+├── Makefile                    # Build and development commands
+├── requirements.txt            # API Python dependencies, excluding testing
+├── requirements-test.txt       # Testing dependencies
+├── Dockerfile                  # API Production Dockerfile
+├── Dockerfile.dev              # API Development Dockerfile
+├── docker-compose.yml          # Full service orchestration instructions (API, nginx, etc.)
 ├── .dockerignore               # Files and directories to ignore in Docker builds
 ├── .gitignore
 ├── CHANGELOG.md                # Document significant changes across project versions
-├── Makefile                    # Build and development commands
 └── README.md               
 ```
-### `settings/` directory
-This directory contains the required configuration files for running the application.
-* `config.py`: Contains the main configuration settings for the API, including the available translation pairs, the available means of uploading/downloading models, the directory within the project where the models are stored, etc.
-* `environment_config.py`: Manages the loading of environment variables detaling more specific API/model behavior from a `.env` file, which is also expected to be in the **settings/** directory. See the `.env.template` file for reference on how to create your own `.env` file.
-* `language_mappings.json`: A JSON file that maps language codes to their full names (e.g., "en" to "English").
-* `model_mappings.json`: A JSON file that maps translation pairs to their corresponding HuggingFace model names.
 
-### `Makefile` and `main.py`
-The `Makefile` contains several CLI targets to facilitate development and testing of the application, as well as the main command to run the API on a `uvicorn` server. These commands come from the `main.py` file, and are explained there in more detail.
+## 2. Environment Configuration  
+The API's behavior can be configured from the values inside the `settings/` directory. These settings are called inside `main.py` to execute the project's different functionalities.  
+* `.env.template`: Template for environment variables. Copy this file to `.env` and modify the values as needed.
+* `config.py`: Contains basic application configurations such as API name and version, allowed translation pairs, and the default directories for model storage and mapping.
+* `environment_config.py`: Contains a utility class for loading and managing environment variables.
+* `model_mappings.json`: JSON file that maps translation pairs to their respective HuggingFace models.
+* `nginx.conf`: Configuration file for the `nginx` server used as a reverse proxy and load balancer for the API, when deployed with Docker Compose.
 
-### `examples/` directory
-This directory contains useful material for understanding and exploring the API's capabilities and behavior, including a Jupyter notebook and a Postman collection with examples. Both resources are complementary to better understand how to interact with the API.
-
-### `tests/` directory
-This directory contains the test suite for the application, organized into subdirectories for testing different parts of the project:
-* `app/`: Contains tests for the application modules, including tests for basic API endpoints and the prediction endpoint.
-* `models/`: Contains tests related to model management and functionality.
-The tests can be run automatically using the `make run_pytest` command from the `Makefile` on the CLI.
-
-## 2. Environment variables and API configuration
-Below is an explanation of the environment variables used in this project:
-
-### Testing Variables
-* `TEST_TRANSLATION_PAIR`: Specifies the default language pair used for testing translations (e.g., "en-fr" for English to French).
-* `TEST_TEXT`: The default text used for testing the translation functionality (e.g., "Hello, world!").
-* `TEST_FILE_DOWNLOAD_PATH`: The file path for running AWS S3 upload/download tests.
-
-### Model Variables
-* `MODEL_STORAGE_MODE`: Determines where the models are stored/uploaded. It can be set to either **local** (models are stored locally in the project directory) or **s3** (models are stored in an AWS S3 bucket).
-* `S3_BUCKET_NAME`: The name of the AWS S3 bucket used for storing models when `MODEL_STORAGE_MODE` is set to **s3**.
-
-### API Variables
-* `API_HOST`: The host address for the API server (default is **0.0.0.0**).
-* `API_PORT`: The port number on which the API server listens (default is **8000**).
-* `API_LOG_LEVEL`: The logging level for the API server (e.g., **debug**, **info**, **warning**, **error**).
-
-### Credentials/Secrets
-The credentials required for accessing AWS S3 services. These should be set as environment variables and not hardcoded in the codebase for security reasons.
-* `AWS_ACCESS_KEY_ID`: The AWS access key ID for accessing S3 services.
-* `AWS_SECRET_ACCESS_KEY`: The AWS secret access key for accessing S3 services.
-* `AWS_REGION`: The AWS region where the S3 bucket is located.
-
-**Note**: The AWS S3 is an optional, non-essential feature of the project. The API will still work fine if using local model storage.
-
-## 3. How to run  
-It's advised to run the project in a Docker container for ease of deployment and consistency across different environments. Alternatively, it can be run using other options like virtual environments, but this is not covered in this README.
-
-### First Steps for local setup
+## 3. Development Setup  
+This project can be set up for local development using Docker or with a local Python environment. For Docker-based development, follow these steps:
 
 1. Make sure you have [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed on your machine.  
 2. Clone this repository to your local machine using:
@@ -110,19 +72,15 @@ It's advised to run the project in a Docker container for ease of deployment and
    ```bash
    cd ML-Translation-API
    ```
-4. Create a `.env` file in the `settings/` directory based on the provided `.env.template` file. Fill in the necessary environment variables depending on your use case. From the terminal, this may be done with the commands:
-
-### Development Setup
-On a development setting, it's desirable to modify and test out different parts of the project before running the API server.
-
-1. Build a development Docker image:
+4. Create a `.env` file in the `settings/` directory based on the instructions provided in section 2.
+5. Build a development Docker image:
     ```bash
     docker build -f Dockerfile.dev -t ml-translation-api:dev .
     ```
 Command breakdown:
 - `-f Dockerfile.dev`: Specifies to Docker o use the `Dockerfile.dev` file for building the image instead of the default `Dockerfile`. 
 
-2. Run the container in development mode with volume mounting and interactive shell:
+6. Run the container in development mode with volume mounting and interactive shell:
     ```bash
     docker run --rm -v "${PWD}":/app -p 8000:8000 -it ml-translation-api:dev
     ```
@@ -142,7 +100,7 @@ Command breakdown:
   - `-t`: Allocates a pseudo-TTY (terminal)
 - `ml-translation-api:dev`: The image name and tag to run
 
-3. Inside the container, you can now run the commands from the `Makefile` individually:
+7. Inside the container, you can now run the commands from the `Makefile` individually:
     ```bash
     # Run the API server manually
     make run_api_on_server
@@ -151,47 +109,37 @@ Command breakdown:
     make test_model_prediction
     ```
 
-### Production Setup
-The production version of the project goes straight to business and runs the API server automatically as a command when the container starts.
+**Note**: This mode is meant for testing the API server's different functionalities or as a whole, and does not include the full orchestration with `nginx`, `Prometheus`, and `Grafana`.
 
-1. Build the Docker image from the provided `Dockerfile`:
-    ```bash
-    docker build -t ml-translation-api .
-    ```
-2. Run the Docker container, mapping the container's port to your local machine's port:
-    ```bash
-    docker run -p 8000:8000 ml-translation-api
-    ```
-    This automatically starts the uvicorn server running the FastAPI application, and maps port `8000` of the container (left) to port `8000` (right) on your local machine.
-
-3. Once the container is running, you can access the API documentation by navigating to `http://localhost:8000/docs` in your web browser. This will open the interactive Swagger UI where you can test the API endpoints. Alternatively, call the endpoints directly using tools like `curl` or Postman.
-
-### Scaling with nginx and docker-compose
-The API can be scaled to handle higher traffic using multiple containers managed by nginx as a reverse proxy and load balancer.
-
-**Architecture:**
-- App containers: Multiple FastAPI instances running on port 8000 (internal networking).
-- nginx container: Entry point listening on port 80, forwards requests to app containers. Nginx server is created from its default image with a configuration file (`settings/nginx.conf`) that defines the reverse proxy behavior.
-- Docker Compose: Defined in `docker-compose.yml`, orchestrates the services (app and reverse proxy) and handles automatic load balancing.
-
-
-In order to run the scaled app (example of 3 app instances), use the following command:
+## 4. Production Setup  
+The production version of the project goes straight to running the API server automatically as a command when the container starts, as specified in the `Dockerfile`. It also includes the full orchestration with `nginx`, `Prometheus`, and `Grafana` using `docker-compose`. To set up the production environment, make sure you have Docker Desktop installed and run:
 
 ```bash
-docker compose up --scale app=3 -d
+docker compose up -d
 ```
+This command will build and start all the services defined in the `docker-compose.yml` file in detached mode (`-d`), allowing you to run the services in the background.  
+After this, the API will be accessible at `http://localhost/` (port 80).
 
-With this, the API is now accessible at `http://localhost/` (port 80) and nginx will distribute incoming requests across the 3 app instances running in the background.
+## 5. Application Endpoints  
+`FastAPI` automatically generates interactive API documentation that can be accessed once the server is running. You can access the documentation at:
+- Swagger UI: `http://localhost/docs`
+- ReDoc: `http://localhost/redoc`
 
-## 4. Upcoming features
-* Add the option of producing confidence lightweight scores for the `predict/` endpoint of the API so users can assess the reliability of the translations without bloating image size with packages like `torch`.
-* Add open-source telemetry collection to keep track of API usage and performance metrics, like response times, usage rates and model accuracy metrics.
+If running the entire cluster with `docker-compose`, the following endpoints will also be available:
+* Prometheus UI: `http://localhost:9090`
+* Grafana UI: `http://localhost:3000`. Grafana has been set up in this project to not require a login for simplicity, although in a real production setting this should be changed for security purposes. It also has a pre-configured connection to the Prometheus data source and a dashboard to visualize basic API metrics.
+
+## 6. Project Limitations and Future Work  
+There are many ways this project can be improved and extended. Here are some ideas for future work:
+* Improve monitoring capabilities and traceability by generating and collecting logs, traces and spans using open-source telemetry tools like `OpenTelemetry`.  
+* Currently, Prometheus is set up to only scrape the FastAPI application, not `nginx`. Add `nginx` metrics exporting using the `nginx-prometheus-exporter` to monitor request rates, error rates, and response times at the proxy level, which is useful when the main app is down or not finished loading.  
+* Currently, the monitoring capabilities are very basic and all engineering-focused. It would be useful to monitor for machine learning-specific metrics like translation quality (e.g., BLEU scores) over time to detect model drift or degradation in performance, although this would require some thought, as for each translation request there's no ground truth to compare against.
 * Add a module for model fine-tuning with custom datasets to allow users to adapt translation models to specific domains or languages, simulating a real-world scenario.  
-* Integrate CI/CD pipelines using GitHub Actions to automate running the `pytest` tests whenever a pull request is created.
-* Automate the process of deploying the Docker container to cloud services like AWS EC2 in order to expose the API to public consumption using `boto3`.
+* Integrate CI/CD pipelines using GitHub Actions to automate running the `pytest` tests and attempting to build the project's `Docker image` whenever a pull request is created.
+* Add an optional frontend interface for user-friendly interaction with the API.
+* Make the project deployable on cloud platforms like AWS, GCP, or Azure and not just locally with Docker.
 
-
-## 5. Relevant Documentation
+## 7. Relevant Documentation
 * [FastAPI](https://fastapi.tiangolo.com/tutorial/)
 * [Uvicorn](https://uvicorn.dev/)
 * [HuggingFace Hub Translation models](https://huggingface.co/models?pipeline_tag=translation&sort=trending)
@@ -201,4 +149,5 @@ With this, the API is now accessible at `http://localhost/` (port 80) and nginx 
 * [Pytest](https://docs.pytest.org/en/stable/)
 * [Flake8](https://flake8.pycqa.org/en/latest/user/configuration.html)
 * [nginx Beginner's Guide](https://nginx.org/en/docs/beginners_guide.html)
-* [Postman Docs](https://learning.postman.com/docs/introduction/overview/)
+* [Grafana Docs](https://grafana.com/docs/)
+* [Prometheus Docs](https://prometheus.io/docs/introduction/overview/)

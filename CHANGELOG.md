@@ -2,12 +2,7 @@
 All significant changes to the project will be kept in this file.
 
 ## v0.0.6
-Updated the API to generate performance-related metrics using `prometheus-fastapi-instrumentator` (this creates a new `/metrics` endpoint not meant for direct user interaction), and collect and store them using `Prometheus`. The following metrics are now tracked:
-* Request count per endpoint and HTTP method
-* Request latency per endpoint
-* Request latency times
-* CPU and memory usage of the container running the API service  
-These metrics can be visualized in a dedicated `dashboard/` endpoint, which is built using `Grafana`.
+Updated the API to generate metrics using `prometheus-fastapi-instrumentator`, collect them using `Prometheus`, and visualize them using `Grafana`. The latter includes pre-configured data sources and dashboards for basic monitoring of the service.  
 
 ## v0.0.5  
 Refactored the `predict/` endpoint into `predict/{translation_pair}`, meaning each translation pair now has its own dedicated endpoint. This has several desirable properties:
